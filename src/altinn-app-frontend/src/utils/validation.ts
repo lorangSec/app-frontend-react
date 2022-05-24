@@ -36,7 +36,7 @@ import {
   DatePickerFormatDefault,
 } from '../components/base/DatepickerComponent';
 import { getFormDataForComponent } from './formComponentUtils';
-import { getParsedTextResourceByKey } from './textResource';
+import { getParsedTextResourceByKey, getTextResourceByKey } from './textResource';
 import { convertDataBindingToModel, getKeyWithoutIndex } from './databindings';
 // eslint-disable-next-line import/no-cycle
 import { matchLayoutComponent, setupGroupComponents } from './layout';
@@ -178,6 +178,7 @@ export function validateEmptyFields(
   language: ILanguage,
   hiddenFields: string[],
   repeatingGroups: IRepeatingGroups,
+  textResources: ITextResource[],
 ) {
   const validations = {};
   Object.keys(layouts).forEach((id) => {
@@ -188,6 +189,7 @@ export function validateEmptyFields(
         language,
         hiddenFields,
         repeatingGroups,
+        textResources,
       );
       validations[id] = result;
     }
@@ -204,6 +206,7 @@ export function validateEmptyFieldsForLayout(
   language: ILanguage,
   hiddenFields: string[],
   repeatingGroups: IRepeatingGroups,
+  textResources: ITextResource[],
 ): ILayoutValidations {
   const validations: any = {};
   const allGroups = formLayout.filter((component) => component.type.toLowerCase() === 'group');
@@ -225,6 +228,7 @@ export function validateEmptyFieldsForLayout(
     const result = validateEmptyField(
       formData,
       component.dataModelBindings,
+      getTextResourceByKey(component.textResourceBindings?.title, textResources),
       language,
     );
     if (result !== null) {
@@ -280,6 +284,7 @@ export function validateEmptyFieldsForLayout(
                   const result = validateEmptyField(
                     formData,
                     componentToCheck.dataModelBindings,
+                    getTextResourceByKey(componentToCheck.textResourceBindings?.title, textResources),
                     language,
                     indexedGroupDataBinding,
                     i,
@@ -301,6 +306,7 @@ export function validateEmptyFieldsForLayout(
               const result = validateEmptyField(
                 formData,
                 componentToCheck.dataModelBindings,
+                getTextResourceByKey(componentToCheck.textResourceBindings?.title, textResources),
                 language,
                 groupDataModelBinding,
                 i,
@@ -315,6 +321,7 @@ export function validateEmptyFieldsForLayout(
         const result = validateEmptyField(
           formData,
           component.dataModelBindings,
+          getTextResourceByKey(component.textResourceBindings?.title, textResources),
           language,
         );
         if (result !== null) {
@@ -360,10 +367,12 @@ export function getGroupChildren(
 export function validateEmptyField(
   formData: any,
   dataModelBindings: IDataModelBindings,
+  labelText: string,
   language: ILanguage,
   groupDataBinding?: string,
   index?: number,
 ): IComponentValidations {
+  console.log('validate empty field');
   if (!dataModelBindings) {
     return null;
   }
@@ -387,7 +396,7 @@ export function validateEmptyField(
         warnings: [],
       };
       componentValidations[fieldKey].errors.push(
-        getLanguageFromKey('form_filler.error_required', language),
+        getParsedLanguageFromKey('form_filler.error_required', language, [labelText]),
       );
     }
   });
@@ -648,7 +657,11 @@ export function validateComponentFormData(
       validationResult.validations[layoutId][
         componentIdWithIndex || component.id
       ][fieldKey].errors.push(
-        getLanguageFromKey('form_filler.error_required', language),
+        getParsedLanguageFromKey(
+          'form_filler.error_required',
+          language,
+          [getTextResourceByKey(component.textResourceBindings?.title, textResources)],
+        ),
       );
     }
   }
@@ -1415,11 +1428,18 @@ function removeFixedValidations(validations: any[], fixed?: any[]): any[] {
     return validations;
   }
 
+  console.log('fixed: ', fixed);
+  console.log('validations: ', validations);
+
   return validations.filter((element) => {
     return (
       fixed.findIndex(
-        (fixedElement) =>
-          JSON.stringify(fixedElement) === JSON.stringify(element),
+        (fixedElement) => {
+          if (fixedElement.props && element.props) {
+            return JSON.stringify(fixedElement.props) === JSON.stringify(element.props)
+          }
+          return JSON.stringify(fixedElement) === JSON.stringify(element)
+        },
       ) < 0
     );
   });
@@ -1493,6 +1513,7 @@ export function validateGroup(
       language,
       hiddenFields,
       repeatingGroups,
+      textResources,
     );
   const componentValidations: ILayoutValidations =
     validateFormComponentsForLayout(

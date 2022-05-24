@@ -13,6 +13,7 @@ import type {
   IComponentBindingValidation,
   IComponentValidations,
   ILayoutValidations,
+  ITextResource,
 } from 'src/types';
 import type { ILayoutComponent, ILayoutGroup } from 'src/features/form/layout';
 
@@ -40,12 +41,13 @@ describe('utils > validation', () => {
   let mockLanguage: any;
   let mockFormAttachments: any;
   let mockDataElementValidations: IValidationIssue[];
+  let mockTextResources: ITextResource[];
 
   beforeEach(() => {
     mockLanguage = {
       language: {
         form_filler: {
-          error_required: 'Feltet er påkrevd',
+          error_required: 'Du må fylle ut {0}.',
           file_uploader_validation_error_file_number_1:
             'For å fortsette må du laste opp',
           file_uploader_validation_error_file_number_2: 'vedlegg',
@@ -114,6 +116,8 @@ describe('utils > validation', () => {
         // Add your own children (remember page prefixes!)
       ],
     };
+
+    mockTextResources = [];
 
     mockLayout = {
       FormLayout: [
@@ -644,6 +648,7 @@ describe('utils > validation', () => {
           mockLanguage.language,
           [],
           repeatingGroups,
+          mockTextResources,
         );
 
         const mockResult = {
@@ -683,6 +688,7 @@ describe('utils > validation', () => {
           mockLanguage.language,
           ['componentId_4-0'],
           repeatingGroups,
+          mockTextResources,
         );
 
         const mockResult = {
@@ -719,6 +725,7 @@ describe('utils > validation', () => {
           mockLanguage.language,
           [],
           repeatingGroups,
+          mockTextResources,
         );
 
         expect(componentSpesificValidations).toEqual({});
@@ -732,12 +739,13 @@ describe('utils > validation', () => {
         validations[component.id] = validation.validateEmptyField(
           mockFormData,
           component.dataModelBindings,
+          'someComponent',
           mockLanguage.language,
         );
 
         const mockResult = {
           componentId_3: {
-            simpleBinding: { errors: ['Feltet er påkrevd'], warnings: [] },
+            simpleBinding: { errors: ['Du må fylle ut someComponent'], warnings: [] },
           },
         };
 
@@ -752,6 +760,7 @@ describe('utils > validation', () => {
         validations[component.id] = validation.validateEmptyField(
           mockFormData,
           component.dataModelBindings,
+          '',
           mockLanguage.language,
         );
 
@@ -779,6 +788,7 @@ describe('utils > validation', () => {
       mockLanguage.language,
       hiddenFields,
       repeatingGroups,
+      mockTextResources,
     );
 
     const requiredFieldInSimpleGroup = 'required_in_group_simple';
