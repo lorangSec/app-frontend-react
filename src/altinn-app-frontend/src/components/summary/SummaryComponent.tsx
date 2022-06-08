@@ -12,7 +12,7 @@ import {
   ILayoutComponent,
 } from 'src/features/form/layout';
 import { FormLayoutActions } from 'src/features/form/layout/formLayoutSlice';
-import { IComponentValidations } from 'src/types';
+import { IComponentValidations, IValidationItem } from 'src/types';
 import { makeGetHidden } from 'src/selectors/getLayoutData';
 import ErrorPaper from '../message/ErrorPaper';
 import { useAppDispatch, useAppSelector } from 'src/common/hooks';
@@ -184,10 +184,10 @@ export function SummaryComponent({ id, grid, ...summaryProps }: ISummaryComponen
           <Grid container={true} style={{ paddingTop: '12px' }} spacing={2}>
             {Object.keys(componentValidations).map((binding: string) =>
               componentValidations[binding]?.errors?.map(
-                (validationText: string) => (
+                (validationItem: IValidationItem) => (
                   <ErrorPaper
-                    key={`key-${validationText}`}
-                    message={validationText}
+                    key={`key-${validationItem.code}`}
+                    message={validationItem.message as string}
                   />
                 ),
               ),

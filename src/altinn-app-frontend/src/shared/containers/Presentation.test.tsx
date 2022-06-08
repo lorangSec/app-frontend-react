@@ -48,8 +48,18 @@ describe('containers/Presentation.tsx', () => {
           FormLayout: {
             'mock-component-id': {
               simpleBinding: {
-                errors: ['mock-error-message'],
-                warnings: ['mock-warning-message'],
+                errors: [
+                  {
+                    code: 'error',
+                    message: 'mock-error-message',
+                  },
+                ],
+                warnings: [
+                  {
+                    code: 'warning',
+                    message: 'mock-warning-message',
+                  },
+                ],
               },
             },
           },
@@ -216,7 +226,16 @@ describe('containers/Presentation.tsx', () => {
           FormLayout: {
             unmapped: {
               'mock-component-id': {
-                errors: ['mock-error-message', 'another-mock-error-message'],
+                errors: [
+                  {
+                    code: 'error1',
+                    message: 'mock-error-message',
+                  },
+                  {
+                    code: 'error2',
+                    message: 'another-mock-error-message',
+                  },
+                ],
               },
             },
           },

@@ -75,6 +75,11 @@ export function nb() {
       required_label: '*',
       summary_item_change: 'Endre',
       summary_go_to_correct_page: 'Gå til riktig side i skjema',
+      address: 'Gateadresse',
+      careOf: 'C/O eller annen tilleggsadresse',
+      houseNumber: 'Bolignummer',
+      postPlace: 'Poststed',
+      zipCode: 'Postnr',
     },
     general: {
       action: 'Handling',
@@ -209,6 +214,9 @@ export function nb() {
       log_out: 'Logg ut',
       profile_icon_aria_label: 'Profil ikon knapp',
     },
+    validation: {
+      generic_field: 'dette feltet',
+    },
     validation_errors: {
       min: 'Minste gyldig verdi er {0}',
       max: 'Største gyldig verdi er {0}',
@@ -216,7 +224,7 @@ export function nb() {
       maxLength: 'Bruk {0} eller færre tegn',
       length: 'Antall tillatte tegn er {0}',
       pattern: 'Feil format eller verdi',
-      required: 'Feltet er påkrevd',
+      required: 'Du må fylle ut {0}.',
       enum: 'Kun verdiene {0} er tillatt',
     },
   };

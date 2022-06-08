@@ -31,18 +31,46 @@ export interface IAltinnWindow extends Window {
 }
 
 export interface IComponentBindingValidation {
-  errors?: (
-    | string
-    | ReactNode
-  )[];
-  warnings?: (
-    | string
-    | ReactNode
-  )[];
-  fixed?: (
-    | string
-    | ReactNode
-  )[];
+  errors?: IValidationItem[];
+  warnings?: IValidationItem[];
+  fixed?: IValidationItem[];
+}
+
+export interface IValidationItem {
+  code: string;
+  message: string | ReactNode;
+  params?: string[];
+}
+
+export enum ComponentErrorCodes {
+  Required = 'required',
+  Pattern = 'pattern',
+  Format = 'format',
+  Type = 'type',
+  Enum = 'enum',
+  Const = 'const',
+  MultipleOf = 'multipleOf',
+  OneOf = 'oneOf',
+  AnyOf = 'anyOf',
+  AllOf = 'allOf',
+  Not = 'not',
+  Minimum = 'minimum',
+  Maximum = 'maximum',
+  ExclusiveMinimum = 'exclusiveMinimum',
+  ExclusiveMaximum = 'exclusiveMaximum',
+  MinLength = 'minLength',
+  MaxLength = 'maxLength',
+  TooFewFiles = 'fileUpload.TooFewFiles',
+  TooManyFiles = 'fileUpload.TooManyFiles',
+  MissingTag = 'fileUpload.MissingTag',
+  FileSize = 'fileUpload.FileSize',
+  FileUploadFailed = 'fileUpload.uploadFailed',
+  FileUpdateFailed = 'fileUpload.updateFailed',
+  FileDeleteFailed = 'fileUpload.deleteFailed',
+  InvalidDate = 'datePicker.InvalidDate',
+  MinDateExceeded = 'datePicker.MinDateExceeded',
+  MaxDateExceeded = 'datePicker.MaxDateExceeded',
+  Unspecified = 'unspecified',
 }
 
 export interface IComponentValidations {
@@ -213,6 +241,10 @@ export interface ITextResource {
 }
 
 export interface ITextResourceBindings {
+  description?: string;
+  help?: string;
+  shortName?: string;
+  title?: string;
   [id: string]: string;
 }
 

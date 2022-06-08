@@ -20,6 +20,8 @@ import {
   IOption,
   IOptions,
   IValidations,
+  IValidationItem,
+  ComponentErrorCodes,
 } from 'src/types';
 import { AsciiUnitSeparator } from './attachment';
 import { getOptionLookupKey } from './options';
@@ -276,36 +278,48 @@ export function getFileUploadComponentValidations(
   language: ILanguage,
   attachmentId: string = undefined
 ): IComponentValidations {
-  const componentValidations: any = {
+  const componentValidations: IComponentValidations = {
     simpleBinding: {
       errors: [],
       warnings: [],
     },
   };
   if (validationError === 'upload') {
-    componentValidations.simpleBinding.errors.push(
-      getLanguageFromKey(
+    componentValidations.simpleBinding.errors.push({
+      code: ComponentErrorCodes.FileUploadFailed,
+      message: getLanguageFromKey(
         'form_filler.file_uploader_validation_error_upload',
         language,
       ),
-    );
+    });
   } else if (validationError === 'update') {
     if (attachmentId === undefined || attachmentId === '') {
-      componentValidations.simpleBinding.errors.push(
-        getLanguageFromKey('form_filler.file_uploader_validation_error_update', language),
-      );
+      componentValidations.simpleBinding.errors.push({
+        code: ComponentErrorCodes.FileUpdateFailed,
+        message: getLanguageFromKey(
+          'form_filler.file_uploader_validation_error_update',
+          language,
+        ),
+      });
     } else {
-      componentValidations.simpleBinding.errors.push( // If validation has attachmentId, add to start of message and seperate using ASCII Universal Seperator
-        attachmentId + AsciiUnitSeparator + getLanguageFromKey('form_filler.file_uploader_validation_error_update', language),
-      );
+      // If validation has attachmentId, add to start of message
+      // and separate using ASCII Universal Separator
+      componentValidations.simpleBinding.errors.push({
+        code: ComponentErrorCodes.FileUpdateFailed,
+        message: attachmentId + AsciiUnitSeparator + getLanguageFromKey(
+          'form_filler.file_uploader_validation_error_update',
+          language,
+        ),
+      });
     }
   } else if (validationError === 'delete') {
-    componentValidations.simpleBinding.errors.push(
-      getLanguageFromKey(
+    componentValidations.simpleBinding.errors.push({
+      code: ComponentErrorCodes.FileDeleteFailed,
+      message: getLanguageFromKey(
         'form_filler.file_uploader_validation_error_delete',
         language,
       ),
-    );
+    });
   }
   return componentValidations;
 }
@@ -325,7 +339,9 @@ export function getFileUploadWithTagComponentValidations(
     };
   }
   if (validationMessages.simpleBinding !== undefined && validationMessages.simpleBinding.errors.length > 0) {
-    parseFileUploadComponentWithTagValidationObject(validationMessages.simpleBinding.errors as string[]).forEach((validation) => {
+    parseFileUploadComponentWithTagValidationObject(
+      validationMessages.simpleBinding.errors as IValidationItem[],
+    ).forEach((validation) => {
       result.push(validation);
     });
   }
@@ -335,7 +351,7 @@ export function getFileUploadWithTagComponentValidations(
   return result;
 }
 
-export const parseFileUploadComponentWithTagValidationObject = (validationArray: string[]): Array<{ id: string, message: string }> => {
+export const parseFileUploadComponentWithTagValidationObject = (validationArray: IValidationItem[]): Array<{ id: string, message: string }> => {
   if (validationArray === undefined || validationArray.length === 0) {
     return [];
   }
@@ -345,7 +361,7 @@ export const parseFileUploadComponentWithTagValidationObject = (validationArray:
     if (val.length === 2) {
       obj.push({ id: val[0], message: val[1] });
     } else {
-      obj.push({ id: '', message: validation });
+      obj.push({ id: '', message: validation.message as string });
     }
   });
   return obj;

@@ -36,7 +36,7 @@ import {
   IValidations,
   IOptions,
   ITextResourceBindings,
-} from '../../../types';
+} from 'src/types';
 import { ILanguage } from 'altinn-shared/types';
 
 export interface IRepeatingGroupTableProps {

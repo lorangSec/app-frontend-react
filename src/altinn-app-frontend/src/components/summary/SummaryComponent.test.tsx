@@ -74,7 +74,12 @@ describe('SummaryComponent', () => {
         [pageId]: {
           [defaultId]: {
             simpleBinding: {
-              errors: ['Error message'],
+              errors: [
+                {
+                  code: 'error',
+                  message: 'Error message',
+                },
+              ],
               warnings: [],
             },
           },

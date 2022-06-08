@@ -26,7 +26,12 @@ describe('validationSlice', () => {
       formLayout: {
         mockComponent: {
           simpleBinding: {
-            errors: ['Error message'],
+            errors: [
+              {
+                code: 'error',
+                message: 'Error message',
+              },
+            ],
             warnings: [],
           },
         },
@@ -73,8 +78,18 @@ describe('validationSlice', () => {
   it('handles updateComponentValidations action', () => {
     const componentValidations: IComponentValidations = {
       simpleBinding: {
-        errors: ['Something went wrong...'],
-        warnings: ['Warning'],
+        errors: [
+          {
+            code: 'error',
+            message: 'Something went wrong...',
+          },
+        ],
+        warnings: [
+          {
+            code: 'warning',
+            message: 'Warning',
+          },
+        ],
       },
     };
     const componentId = 'testComponent';

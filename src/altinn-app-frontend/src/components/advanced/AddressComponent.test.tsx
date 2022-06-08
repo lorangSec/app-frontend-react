@@ -280,7 +280,10 @@ describe('components > advanced > AddressComponent', () => {
   });
 
   it('should display error message coming from props', () => {
-    const errorMessage = 'cannot be empty;';
+    const errorMessage = {
+      code: 'error',
+      message: 'cannot be empty;',
+    };
     const handleDataChange = jest.fn();
     render({
       formData: {
@@ -296,7 +299,7 @@ describe('components > advanced > AddressComponent', () => {
       },
     });
 
-    expect(screen.queryByText(errorMessage)).toBeInTheDocument();
+    expect(screen.queryByText(errorMessage.message)).toBeInTheDocument();
   });
 
   it('should display no extra markings when required is false, and labelSettings.optionalIndicator is not true', () => {

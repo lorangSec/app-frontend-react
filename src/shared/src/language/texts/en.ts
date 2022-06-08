@@ -41,7 +41,7 @@ export function en() {
       back_to_summary: 'Return to summary',
       error_report_header: 'There is a problem',
       error_report_description: 'The form contains errors that prevent it from being submitted. Try submitting again once the errors are corrected.',
-      error_required: 'EN_Du må fylle ut {0}.',
+      error_required: 'You have to fill out {0}.',
       file_upload_valid_file_format_all: 'all',
       file_uploader_add_attachment: 'Add more attachments',
       file_uploader_drag: 'Drag and drop or',
@@ -75,6 +75,11 @@ export function en() {
       required_label: '*',
       summary_item_change: 'Change',
       summary_go_to_correct_page: 'Go to the correct page in the form',
+      address: 'Street Address',
+      careOf: 'C/O or other additional address',
+      houseNumber: 'House Number',
+      postPlace: 'Post Place',
+      zipCode: 'Zip Code',
     },
     general: {
       action: 'Action',
@@ -209,6 +214,9 @@ export function en() {
       log_out: 'Log out',
       profile_icon_aria_label: 'Profile icon button',
     },
+    validation: {
+      generic_field: 'this field',
+    },
     validation_errors: {
       min: 'Minimum valid value is {0}',
       max: 'Maximum valid value is {0}',
@@ -216,7 +224,7 @@ export function en() {
       maxLength: 'Use {0} or fewer characters',
       length: 'Number of characters allowed is {0}',
       pattern: 'Wrong format or value',
-      required: 'Field is required',
+      required: 'You have to fill out {0}.',
       enum: 'Only the values {0} are permitted',
     },
   };

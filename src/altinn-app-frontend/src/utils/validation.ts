@@ -21,14 +21,19 @@ import {
   ILayoutValidations,
   IDataModelBindings,
   IRuntimeState,
+  ComponentErrorCodes,
+  IValidationItem,
+  IValidationIssue,
+  Severity,
+  DateFlags,
+  ITextResourceBindings,
 } from 'src/types';
 import {
   ILayouts,
   ILayoutComponent,
   ILayoutGroup,
   ILayout,
-} from '../features/form/layout';
-import { IValidationIssue, Severity, DateFlags } from '../types';
+} from 'src/features/form/layout';
 // eslint-disable-next-line import/no-cycle
 import {
   DatePickerMinDateDefault,
@@ -36,7 +41,7 @@ import {
   DatePickerFormatDefault,
 } from '../components/base/DatepickerComponent';
 import { getFormDataForComponent } from './formComponentUtils';
-import { getParsedTextResourceByKey, getTextResourceByKey } from './textResource';
+import { getParsedTextResourceByKey, getTextFromAppOrDefault, getTextResourceByKey } from './textResource';
 import { convertDataBindingToModel, getKeyWithoutIndex } from './databindings';
 // eslint-disable-next-line import/no-cycle
 import { matchLayoutComponent, setupGroupComponents } from './layout';
@@ -228,7 +233,8 @@ export function validateEmptyFieldsForLayout(
     const result = validateEmptyField(
       formData,
       component.dataModelBindings,
-      getTextResourceByKey(component.textResourceBindings?.title, textResources),
+      component.textResourceBindings,
+      textResources,
       language,
     );
     if (result !== null) {
@@ -284,7 +290,8 @@ export function validateEmptyFieldsForLayout(
                   const result = validateEmptyField(
                     formData,
                     componentToCheck.dataModelBindings,
-                    getTextResourceByKey(componentToCheck.textResourceBindings?.title, textResources),
+                    componentToCheck.textResourceBindings,
+                    textResources,
                     language,
                     indexedGroupDataBinding,
                     i,
@@ -306,7 +313,8 @@ export function validateEmptyFieldsForLayout(
               const result = validateEmptyField(
                 formData,
                 componentToCheck.dataModelBindings,
-                getTextResourceByKey(componentToCheck.textResourceBindings?.title, textResources),
+                componentToCheck.textResourceBindings,
+                textResources,
                 language,
                 groupDataModelBinding,
                 i,
@@ -321,7 +329,8 @@ export function validateEmptyFieldsForLayout(
         const result = validateEmptyField(
           formData,
           component.dataModelBindings,
-          getTextResourceByKey(component.textResourceBindings?.title, textResources),
+          component.textResourceBindings,
+          textResources,
           language,
         );
         if (result !== null) {
@@ -367,12 +376,12 @@ export function getGroupChildren(
 export function validateEmptyField(
   formData: any,
   dataModelBindings: IDataModelBindings,
-  labelText: string,
+  textResourceBindings: ITextResourceBindings,
+  textResources: ITextResource[],
   language: ILanguage,
   groupDataBinding?: string,
   index?: number,
 ): IComponentValidations {
-  console.log('validate empty field');
   if (!dataModelBindings) {
     return null;
   }
@@ -381,7 +390,40 @@ export function validateEmptyField(
     fieldKeys.push(modelBinding);
   });
   const componentValidations: IComponentValidations = {};
+
   fieldKeys.forEach((fieldKey) => {
+    const value = getFormDataFromFieldKey(fieldKey, dataModelBindings, formData, groupDataBinding, index);
+    if (!value && fieldKey) {
+      componentValidations[fieldKey] = {
+        errors: [],
+        warnings: [],
+      };
+
+      const fieldName = getFieldName(
+        textResourceBindings,
+        textResources,
+        language,
+        fieldKey !== 'simpleBinding' ? fieldKey : undefined,
+      );
+      componentValidations[fieldKey].errors.push({
+        code: ComponentErrorCodes.Required,
+        message: getParsedLanguageFromKey('form_filler.error_required', language, [fieldName]),
+      });
+    }
+  });
+  if (Object.keys(componentValidations).length > 0) {
+    return componentValidations;
+  }
+  return null;
+}
+
+export function getFormDataFromFieldKey(
+  fieldKey: string,
+  dataModelBindings: IDataModelBindings,
+  formData: any,
+  groupDataBinding?: string,
+  index?: number,
+) {
     let dataModelBindingKey = dataModelBindings[fieldKey];
     if (groupDataBinding) {
       dataModelBindingKey = dataModelBindingKey.replace(
@@ -389,21 +431,29 @@ export function validateEmptyField(
         `${groupDataBinding}[${index}]`,
       );
     }
-    const value = formData[dataModelBindingKey];
-    if (!value && fieldKey) {
-      componentValidations[fieldKey] = {
-        errors: [],
-        warnings: [],
-      };
-      componentValidations[fieldKey].errors.push(
-        getParsedLanguageFromKey('form_filler.error_required', language, [labelText]),
-      );
-    }
-  });
-  if (Object.keys(componentValidations).length > 0) {
-    return componentValidations;
+    return formData[dataModelBindingKey];
+}
+
+export function getFieldName(
+  textResourceBindings: ITextResourceBindings,
+  textResources: ITextResource[],
+  language: ILanguage,
+  fieldKey?: string,
+): string {
+  if (fieldKey)
+  {
+    return getTextFromAppOrDefault(`form_filler.${fieldKey}`, textResources, language);
   }
-  return null;
+
+  if (textResourceBindings.shortName) {
+    return getTextResourceByKey(textResourceBindings.shortName, textResources);
+  }
+
+  if (textResourceBindings.title) {
+    return getTextResourceByKey(textResourceBindings.title, textResources);
+  }
+
+  return getLanguageFromKey('validation.generic_field', language);
 }
 
 export function validateFormComponents(
@@ -454,15 +504,16 @@ export function validateFormComponentsForLayout(
               warnings: [],
             },
           };
-          componentValidations[fieldKey].errors.push(
-            `${getLanguageFromKey(
+          componentValidations[fieldKey].errors.push({
+            code: ComponentErrorCodes.TooFewFiles,
+            message: `${getLanguageFromKey(
               'form_filler.file_uploader_validation_error_file_number_1',
               language,
             )} ${component.minNumberOfAttachments} ${getLanguageFromKey(
               'form_filler.file_uploader_validation_error_file_number_2',
               language,
             )}`,
-          );
+          });
           validations[component.id] = componentValidations;
         }
       }
@@ -477,9 +528,16 @@ export function validateFormComponentsForLayout(
         const isValid = attachmentsValid(attachments, component);
         if (!isValid) {
           if (!isValid) {
-            componentValidations[fieldKey].errors.push(
-              `${getLanguageFromKey('form_filler.file_uploader_validation_error_file_number_1', language)} ${component.minNumberOfAttachments} ${getLanguageFromKey('form_filler.file_uploader_validation_error_file_number_2', language)}`,
-            );
+            componentValidations[fieldKey].errors.push({
+              code: ComponentErrorCodes.TooFewFiles,
+              message: `${getLanguageFromKey(
+                'form_filler.file_uploader_validation_error_file_number_1',
+                language,
+              )} ${component.minNumberOfAttachments} ${getLanguageFromKey(
+                'form_filler.file_uploader_validation_error_file_number_2',
+                language,
+              )}`,
+            });
           }
         } else {
           const missingTagAttachments = attachments[component.id]
@@ -487,9 +545,13 @@ export function validateFormComponentsForLayout(
             .map((attachment) => attachment.id);
           if (missingTagAttachments?.length > 0) {
             missingTagAttachments.forEach((missingId) => {
-              componentValidations[fieldKey].errors.push(
-                `${missingId + AsciiUnitSeparator + getLanguageFromKey('form_filler.file_uploader_validation_error_no_chosen_tag', language)} ${component.textResourceBindings.tagTitle.toLowerCase()}.`,
-              );
+              componentValidations[fieldKey].errors.push({
+                code: ComponentErrorCodes.MissingTag,
+                message: `${missingId + AsciiUnitSeparator + getLanguageFromKey(
+                  'form_filler.file_uploader_validation_error_no_chosen_tag',
+                   language,
+                )} ${component.textResourceBindings.tagTitle.toLowerCase()}.`,
+              });
             });
           }
         }
@@ -550,17 +612,23 @@ export function validateDatepickerFormData(
 
   if (formData === null) {
     // is only set to NULL if the format is malformed. Is otherwise undefined or empty string
-    validations.errors.push(
-      getParsedLanguageFromKey('date_picker.invalid_date_message', language, [
+    validations.errors.push({
+      code: ComponentErrorCodes.InvalidDate,
+      message: getParsedLanguageFromKey('date_picker.invalid_date_message', language, [
         format,
       ]),
-    );
+    });
   }
 
   if (date && date.isBefore(minDate)) {
-    validations.errors.push(getLanguageFromKey('date_picker.min_date_exeeded', language));
+    validations.errors.push({
+      code: ComponentErrorCodes.MinDateExceeded,
+      message: getLanguageFromKey('date_picker.min_date_exeeded', language)
+    });
   } else if (date && date.isAfter(maxDate)) {
-    validations.errors.push(getLanguageFromKey('date_picker.max_date_exeeded', language));
+    validations.errors.push({
+      code: ComponentErrorCodes.MaxDateExceeded,
+      message: getLanguageFromKey('date_picker.max_date_exeeded', language)});
   }
 
   return validations;
@@ -647,6 +715,7 @@ export function validateComponentFormData(
           null,
           getKeyWithoutIndex(dataModelField),
           errorMessage,
+          error.keyword,
           validationResult.validations,
           { ...component, id: componentIdWithIndex || component.id },
         );
@@ -656,13 +725,14 @@ export function validateComponentFormData(
     if (!formData || formData === '') {
       validationResult.validations[layoutId][
         componentIdWithIndex || component.id
-      ][fieldKey].errors.push(
-        getParsedLanguageFromKey(
+      ][fieldKey].errors.push({
+        code: ComponentErrorCodes.Required,
+        message: getParsedLanguageFromKey(
           'form_filler.error_required',
           language,
           [getTextResourceByKey(component.textResourceBindings?.title, textResources)],
         ),
-      );
+      });
     }
   }
 
@@ -813,6 +883,7 @@ export function validateFormDataForLayout(
       layout,
       dataBindingName,
       errorMessage,
+      error.keyword,
       result.validations,
     );
   });
@@ -834,6 +905,7 @@ export function mapToComponentValidations(
   layout: ILayout,
   dataBindingName: string,
   errorMessage: string,
+  errorCode: string,
   validations: ILayoutValidations,
   validatedComponent?: ILayoutComponent | ILayoutGroup,
 ) {
@@ -886,26 +958,33 @@ export function mapToComponentValidations(
     if (validations[layoutId][componentId]) {
       if (validations[layoutId][componentId][dataModelFieldKey]) {
         if (
-          validations[layoutId][componentId][dataModelFieldKey].errors.includes(
-            errorMessage,
+          validations[layoutId][componentId][dataModelFieldKey].errors.find(
+            e => e.message === errorMessage,
           )
         ) {
           return;
         }
-        validations[layoutId][componentId][dataModelFieldKey].errors.push(
-          errorMessage,
-        );
+        validations[layoutId][componentId][dataModelFieldKey].errors.push({
+          code: errorCode,
+          message: errorMessage,
+        });
       } else {
         // eslint-disable-next-line no-param-reassign
         validations[layoutId][componentId][dataModelFieldKey] = {
-          errors: [errorMessage],
+          errors: [{
+            code: errorCode,
+            message: errorMessage,
+          }],
         };
       }
     } else {
       // eslint-disable-next-line no-param-reassign
       validations[layoutId][componentId] = {
         [dataModelFieldKey]: {
-          errors: [errorMessage],
+          errors: [{
+            code: errorCode,
+            message: errorMessage,
+          }],
         },
       };
     }
@@ -1166,27 +1245,31 @@ function addValidation(
 
   switch (validation.severity) {
     case Severity.Error: {
-      updatedValidations.errors.push(
-        getParsedTextResourceByKey(
+      updatedValidations.errors.push({
+        code: validation.code,
+        message: getParsedTextResourceByKey(
           validation.description,
           textResources,
         ) as any,
-      );
+      });
       break;
     }
     case Severity.Warning: {
-      updatedValidations.warnings.push(
-        getParsedTextResourceByKey(
+      updatedValidations.warnings.push({
+        code: validation.code,
+        message: getParsedTextResourceByKey(
           validation.description,
           textResources,
         ) as any,
-      );
+
+      });
       break;
     }
     case Severity.Fixed: {
-      updatedValidations.fixed.push(
-        getParsedTextResourceByKey(validation.description, textResources),
-      );
+      updatedValidations.fixed.push({
+        code: validation.code,
+        message: getParsedTextResourceByKey(validation.description, textResources),
+      });
       break;
     }
     default:
@@ -1427,9 +1510,6 @@ function removeFixedValidations(validations: any[], fixed?: any[]): any[] {
   if (!fixed || fixed.length === 0) {
     return validations;
   }
-
-  console.log('fixed: ', fixed);
-  console.log('validations: ', validations);
 
   return validations.filter((element) => {
     return (
@@ -1695,18 +1775,13 @@ export function getHighestIndexOfChildGroup(
 
 export function missingFieldsInLayoutValidations(
   layoutValidations: ILayoutValidations,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   language: ILanguage,
 ): boolean {
   let result = false;
-  const requiredMessage = getLanguageFromKey('form_filler.error_required', language);
-  const lookForRequiredMsg = (e: any) => {
-    if (typeof(e) === 'string') {
-      return e.includes(requiredMessage);
-    }
-    if (Array.isArray(e)) {
-      return e.findIndex(lookForRequiredMsg) > -1;
-    }
-    return (e?.props?.children as string).includes(requiredMessage);
+  // const requiredMessage = getLanguageFromKey('form_filler.error_required', language);
+  const lookForRequiredMsg = (e: IValidationItem) => {
+    return e.code === ComponentErrorCodes.Required;
   };
 
   Object.keys(layoutValidations).forEach((component: string) => {

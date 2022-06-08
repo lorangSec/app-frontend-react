@@ -186,7 +186,17 @@ export function EditWindowComponent(props: EditWindowProps): JSX.Element {
             whiteSpace: 'pre-wrap',
           }}
         >
-          {renderValidationMessages(props.attachmentValidations.filter((i) => i.id === props.attachment.id).map((e) => { return e.message; }), `attachment-error-${props.attachment.id}`, 'error')}
+          {renderValidationMessages(
+            props.attachmentValidations
+              .filter((i) => i.id === props.attachment.id)
+              .map((e) => {
+                return {
+                  code: `error-${props.attachment.id}`,
+                  message: e.message,
+                };
+              }),
+            `attachment-error-${props.attachment.id}`, 'error',
+          )}
         </div>
         : undefined
       }

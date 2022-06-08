@@ -3,7 +3,7 @@ import { mount } from 'enzyme';
 import { Provider } from 'react-redux';
 import configureStore from 'redux-mock-store';
 
-import type { ITextResourceBindings } from 'src/features/form/layout';
+import type { ITextResourceBindings } from 'src/types';
 import type { IComponentProps } from 'src/components';
 
 import {
@@ -16,6 +16,7 @@ import {
   parseFileUploadComponentWithTagValidationObject,
 } from '../../../../utils/formComponentUtils';
 import { FileUploadWithTagComponent } from './FileUploadWithTagComponent';
+import { ComponentErrorCodes, IValidationItem } from 'src/types';
 
 describe('FileUploadWithTagComponent', () => {
   let mockId: string;
@@ -370,13 +371,24 @@ describe('FileUploadWithTagComponent', () => {
   });
 
   it('parseFileUploadComponentWithTagValidationObject should return correct validation array', () => {
-    const mockValidations = [
-      'Noe gikk galt under opplastingen av filen, prøv igjen senere.',
-      'Noe gikk galt under oppdatering av filens merking, prøv igjen senere.',
-      'mock-attachment-id' +
-        AsciiUnitSeparator +
+    const mockValidations: IValidationItem[] = [
+      {
+        code: ComponentErrorCodes.FileUploadFailed,
+        message: 'Noe gikk galt under opplastingen av filen, prøv igjen senere.',
+      },
+      {
+        code: ComponentErrorCodes.FileUpdateFailed,
+        message: 'Noe gikk galt under oppdatering av filens merking, prøv igjen senere.',
+      },
+      {
+        code: ComponentErrorCodes.FileUpdateFailed,
+        message: 'mock-attachment-id' + AsciiUnitSeparator +
         'Noe gikk galt under oppdatering av filens merking, prøv igjen senere.',
-      'Noe gikk galt under slettingen av filen, prøv igjen senere.',
+      },
+      {
+        code: ComponentErrorCodes.FileDeleteFailed,
+        message: 'Noe gikk galt under slettingen av filen, prøv igjen senere.',
+      },
     ];
     const expectedResult = [
       {

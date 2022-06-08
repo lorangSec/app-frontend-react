@@ -2,7 +2,7 @@ import { shallow } from 'enzyme';
 import * as React from 'react';
 import * as renderer from 'react-test-renderer';
 
-import type { ITextResourceBindings } from 'src/features/form/layout';
+import type { ITextResourceBindings } from 'src/types';
 import type { IComponentProps } from 'src/components';
 
 import { ParagraphComponent } from './ParagraphComponent';
@@ -13,7 +13,7 @@ describe('ParagraphComponent', () => {
   const mockGetTextResource = (key: string) => key;
   const mockLanguage: any = {};
   const mockTextResourceBindings: ITextResourceBindings = {
-    tile: mockText,
+    title: mockText,
   };
 
   it('should match snapshot', () => {

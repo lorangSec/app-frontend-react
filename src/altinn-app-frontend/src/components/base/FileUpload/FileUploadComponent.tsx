@@ -8,7 +8,7 @@ import { isMobile } from 'react-device-detect';
 import { IAttachment } from '../../../shared/resources/attachments';
 import AttachmentDispatcher from '../../../shared/resources/attachments/attachmentActions';
 import './FileUploadComponent.css';
-import { IComponentValidations } from '../../../types';
+import { ComponentErrorCodes, IComponentValidations, IValidationItem } from '../../../types';
 import { renderValidationMessagesForComponent } from '../../../utils/render';
 import { v4 as uuidv4 } from 'uuid';
 import { useAppSelector } from 'src/common/hooks';
@@ -23,7 +23,7 @@ export interface IFileUploadProps extends IFileUploadGenericProps {
 export const bytesInOneMB = 1048576;
 export const emptyArray = [];
 
-export function FileUploadComponent({ 
+export function FileUploadComponent({
   id,
   componentValidations,
   readOnly,
@@ -37,7 +37,7 @@ export function FileUploadComponent({
   textResourceBindings
 }: IFileUploadProps) {
   const [attachments, dispatch] = React.useReducer(reducer, []);
-  const [validations, setValidations] = React.useState([]);
+  const [validations, setValidations] = React.useState<IValidationItem[]>([]);
   const [showFileUpload, setShowFileUpload] = React.useState(false);
   const mobileView = useMediaQuery('(max-width:992px)'); // breakpoint on altinn-modal
 
@@ -91,21 +91,22 @@ export function FileUploadComponent({
   const handleDrop = (acceptedFiles: File[], rejectedFiles: FileRejection[]) => {
     const newFiles: IAttachment[] = [];
     const fileType = id; // component id used as filetype identifier for now, see issue #1364
-    const tmpValidations: string[] = [];
+    const tmpValidations: IValidationItem[] = [];
     const totalAttachments =
       acceptedFiles.length + rejectedFiles.length + attachments.length;
 
     if (totalAttachments > maxNumberOfAttachments) {
       // if the user adds more attachments than max, all should be ignored
-      tmpValidations.push(
-        `${getLanguageFromKey(
+      tmpValidations.push({
+        code: ComponentErrorCodes.TooManyFiles,
+        message: `${getLanguageFromKey(
           'form_filler.file_uploader_validation_error_exceeds_max_files_1',
           language,
         )} ${maxNumberOfAttachments} ${getLanguageFromKey(
           'form_filler.file_uploader_validation_error_exceeds_max_files_2',
           language,
         )}`,
-      );
+      });
     } else {
       // we should upload all files, if any rejected files we should display an error
       acceptedFiles.forEach((file: File) => {
@@ -143,22 +144,24 @@ export function FileUploadComponent({
       if (rejectedFiles.length > 0) {
         rejectedFiles.forEach((fileRejection) => {
           if (fileRejection.file.size > maxFileSizeInMB * bytesInOneMB) {
-            tmpValidations.push(
-              `${fileRejection.file.name} ${getLanguageFromKey(
+            tmpValidations.push({
+              code: ComponentErrorCodes.FileSize,
+              message: `${fileRejection.file.name} ${getLanguageFromKey(
                 'form_filler.file_uploader_validation_error_file_size',
                 language,
               )}`,
-            );
+            });
           } else {
-            tmpValidations.push(
-              `${getLanguageFromKey(
+            tmpValidations.push({
+              code: ComponentErrorCodes.FileUploadFailed,
+              message: `${getLanguageFromKey(
                 'form_filler.file_uploader_validation_error_general_1',
                 language,
               )} ${fileRejection.file.name} ${getLanguageFromKey(
                 'form_filler.file_uploader_validation_error_general_2',
                 language,
               )}`,
-            );
+            });
           }
         });
       }
@@ -406,7 +409,7 @@ export function FileUploadComponent({
           hasValidationMessages={hasValidationMessages}
           hasCustomFileEndings={hasCustomFileEndings}
           validFileEndings={validFileEndings}
-          textResourceBindings={textResourceBindings}        
+          textResourceBindings={textResourceBindings}
       />
       )}
 

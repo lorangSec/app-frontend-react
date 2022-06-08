@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { IValidationItem } from 'src/types';
 import { MessageComponent } from '../components/message/MessageComponent';
 
 const messageComponentStyle = {
@@ -39,10 +40,7 @@ export function renderValidationMessagesForComponent(
 }
 
 export function renderValidationMessages(
-  messages: (
-    | string
-    | React.ReactElement<any, string | React.JSXElementConstructor<any>>[]
-  )[],
+  messages: IValidationItem[],
   id: string,
   messageType: any,
 ) {
@@ -54,15 +52,15 @@ export function renderValidationMessages(
       id={id}
     >
       <ol>
-        {messages.map((message: any, idx: number) => {
-          if (typeof message === 'string') {
+        {messages.map((validationItem: IValidationItem, idx: number) => {
+          if (typeof validationItem.message === 'string') {
             return (
-              <li key={`validationMessage-${id}-${message}`}>
-                <p role='alert'>{message}</p>
+              <li key={`validationMessage-${id}-${validationItem.code}`}>
+                <p role='alert'>{validationItem.message}</p>
               </li>
             );
           }
-          return <li role='alert' key={`validationMessage-${id}-${idx}`}>{message}</li>;
+          return <li role='alert' key={`validationMessage-${id}-${idx}`}>{validationItem.message}</li>;
         })}
       </ol>
     </MessageComponent>

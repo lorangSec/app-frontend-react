@@ -1,13 +1,22 @@
 import { IValidations } from '../src/types';
 import { getParsedTextResourceByKey } from '../src/utils/textResource';
 
-export function getMockValidationState(withFixed: boolean = false): IValidations {
+export function getMockValidationState(withFixed = false): IValidations {
   const fixed = withFixed ? [] : undefined;
   return {
     FormLayout: {
       componentId_1: {
         simpleBinding: {
-          errors: [getParsedTextResourceByKey('Error message 1', []), getParsedTextResourceByKey('Error message 2', [])],
+          errors: [
+            {
+              code: 'error',
+              message: getParsedTextResourceByKey('Error message 1', []),
+            },
+            {
+              code: 'error',
+              message: getParsedTextResourceByKey('Error message 2', []),
+            },
+          ],
           warnings: [],
           fixed,
         },
@@ -15,20 +24,39 @@ export function getMockValidationState(withFixed: boolean = false): IValidations
       componentId_2: {
         customBinding: {
           errors: [],
-          warnings: [getParsedTextResourceByKey('Warning message 1', []), getParsedTextResourceByKey('Warning message 2', [])],
+          warnings: [
+            {
+              code: 'warning',
+              message: getParsedTextResourceByKey('Warning message 1', []),
+            },
+            {
+              code: 'warning',
+              message: getParsedTextResourceByKey('Warning message 2', []),
+            },
+          ],
           fixed,
         },
       },
       'componentId_4-1': {
         simpleBinding: {
-          errors: [getParsedTextResourceByKey('test error', [])],
+          errors: [
+            {
+              code: 'testError',
+              message: getParsedTextResourceByKey('test error', []),
+            }
+          ],
           warnings: [],
           fixed,
         },
       },
       'componentId_5-0-1': {
         simpleBinding: {
-          errors: [getParsedTextResourceByKey('test error', [])],
+          errors: [
+            {
+              code: 'testError',
+              message: getParsedTextResourceByKey('test error', []),
+            }
+          ],
           warnings: [],
           fixed,
         },
@@ -37,8 +65,18 @@ export function getMockValidationState(withFixed: boolean = false): IValidations
     unmapped: {
       unmapped: {
         random_key: {
-          errors: [getParsedTextResourceByKey('test error', [])],
-          warnings: [getParsedTextResourceByKey('test warning', [])],
+          errors: [
+            {
+              code: 'testError',
+              message: getParsedTextResourceByKey('test error', []),
+            },
+          ],
+          warnings: [
+            {
+              code: 'testWarning',
+              message: getParsedTextResourceByKey('test warning', []),
+            },
+          ],
           fixed,
         },
       },

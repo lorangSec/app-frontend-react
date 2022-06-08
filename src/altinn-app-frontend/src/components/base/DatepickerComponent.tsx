@@ -14,7 +14,7 @@ import {
 import MomentUtils from '@date-io/moment';
 import { getLanguageFromKey } from 'altinn-shared/utils';
 import { AltinnAppTheme } from 'altinn-shared/theme';
-import type { IComponentBindingValidation, ITextResourceBindings } from 'src/types';
+import type { IComponentBindingValidation, ITextResourceBindings, IValidationItem } from 'src/types';
 import { DateFlags } from 'src/types';
 import { getFlagBasedDate, getISOString } from '../../utils/dateHelpers';
 import { renderValidationMessagesForComponent } from '../../utils/render';
@@ -154,14 +154,14 @@ function DatepickerComponent({
     );
     const suppliedValidations = componentValidations?.simpleBinding;
     if (suppliedValidations?.errors) {
-      suppliedValidations.errors.forEach((validation: string) => {
+      suppliedValidations.errors.forEach((validation: IValidationItem) => {
         if (validations.errors.indexOf(validation) === -1) {
           validations.errors.push(validation);
         }
       });
     }
     if (suppliedValidations?.warnings) {
-      suppliedValidations.warnings.forEach((validation: string) => {
+      suppliedValidations.warnings.forEach((validation: IValidationItem) => {
         if (validations.warnings.indexOf(validation) === -1) {
           validations.warnings.push(validation);
         }

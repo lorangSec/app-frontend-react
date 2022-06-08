@@ -6,7 +6,7 @@ import useMediaQuery from '@material-ui/core/useMediaQuery';
 import { isMobile } from 'react-device-detect';
 import { IAttachment } from '../../../../shared/resources/attachments';
 import AttachmentDispatcher from '../../../../shared/resources/attachments/attachmentActions';
-import { IMapping, IRuntimeState } from '../../../../types';
+import { ComponentErrorCodes, IMapping, IRuntimeState, IValidationItem } from '../../../../types';
 import { renderValidationMessagesForComponent } from '../../../../utils/render';
 import { FormLayoutActions } from 'src/features/form/layout/formLayoutSlice';
 import { v4 as uuidv4 } from 'uuid';
@@ -53,7 +53,7 @@ export function FileUploadWithTagComponent({
     (state: IRuntimeState) => state.attachments.attachments[id] || emptyArray,
   );
 
-  const setValidationsFromArray = (validationArray: string[]) => {
+  const setValidationsFromArray = (validationArray: IValidationItem[]) => {
     setValidations(
       parseFileUploadComponentWithTagValidationObject(validationArray),
     );
@@ -125,15 +125,16 @@ export function FileUploadWithTagComponent({
   const handleDrop = (acceptedFiles: File[], rejectedFiles: FileRejection[]) => {
     const newFiles: IAttachment[] = [];
     const fileType = id;
-    const tmpValidations: string[] = [];
+    const tmpValidations: IValidationItem[] = [];
     const totalAttachments = acceptedFiles.length + rejectedFiles.length + attachments.length;
 
     if (totalAttachments > maxNumberOfAttachments) {
       // if the user adds more attachments than max, all should be ignored
-      tmpValidations.push(
-        `${getLanguageFromKey('form_filler.file_uploader_validation_error_exceeds_max_files_1', language)
+      tmpValidations.push({
+        code: ComponentErrorCodes.TooManyFiles,
+        message: `${getLanguageFromKey('form_filler.file_uploader_validation_error_exceeds_max_files_1', language)
         } ${maxNumberOfAttachments} ${getLanguageFromKey('form_filler.file_uploader_validation_error_exceeds_max_files_2', language)}`,
-      );
+      });
     } else {
       // we should upload all files, if any rejected files we should display an error
       acceptedFiles.forEach((file: File) => {
@@ -149,13 +150,15 @@ export function FileUploadWithTagComponent({
       if (rejectedFiles.length > 0) {
         rejectedFiles.forEach((fileRejection) => {
           if (fileRejection.file.size > (maxFileSizeInMB * bytesInOneMB)) {
-            tmpValidations.push(
-              `${fileRejection.file.name} ${getLanguageFromKey('form_filler.file_uploader_validation_error_file_size', language)}`,
-            );
+            tmpValidations.push({
+              code: ComponentErrorCodes.FileSize,
+              message: `${fileRejection.file.name} ${getLanguageFromKey('form_filler.file_uploader_validation_error_file_size', language)}`,
+            });
           } else {
-            tmpValidations.push(
-              `${getLanguageFromKey('form_filler.file_uploader_validation_error_general_1', language)} ${fileRejection.file.name} ${getLanguageFromKey('form_filler.file_uploader_validation_error_general_2', language)}`,
-            );
+            tmpValidations.push({
+              code: ComponentErrorCodes.FileUploadFailed,
+              message: `${getLanguageFromKey('form_filler.file_uploader_validation_error_general_1', language)} ${fileRejection.file.name} ${getLanguageFromKey('form_filler.file_uploader_validation_error_general_2', language)}`,
+            });
           }
         });
       }

@@ -371,7 +371,12 @@ describe('formComponentUtils', () => {
     it('should return false when validations has errors', () => {
       const result = isComponentValid({
         simpleBinding: {
-          errors: ['has error'],
+          errors: [
+            {
+              code: 'error',
+              message: 'has error',
+            },
+          ],
           warnings: [],
         },
       });
@@ -382,8 +387,18 @@ describe('formComponentUtils', () => {
     it('should return false when validations has errors and warnings', () => {
       const result = isComponentValid({
         simpleBinding: {
-          errors: ['has error'],
-          warnings: ['has warning'],
+          errors: [
+            {
+              code: 'error',
+              message: 'has error',
+            },
+          ],
+          warnings: [
+            {
+              code: 'warning',
+              message: 'has warning',
+            },
+          ],
         },
       });
 
@@ -394,7 +409,12 @@ describe('formComponentUtils', () => {
       const result = isComponentValid({
         simpleBinding: {
           errors: [],
-          warnings: ['has warnings'],
+          warnings: [
+            {
+              code: 'warning',
+              message: 'has warnings',
+            },
+          ],
         },
       });
 

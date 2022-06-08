@@ -40,6 +40,7 @@ export function AddressComponent({
   readOnly,
   labelSettings,
   simplified,
+  textResourceBindings,
 }: IAddressComponentProps) {
   const cancelToken = axios.CancelToken;
   const source = cancelToken.source();
@@ -227,19 +228,24 @@ export function AddressComponent({
         if (validationMessages[fieldKey]) {
           const validationMessage = validations[fieldKey];
           const match =
-            validationMessages[fieldKey].errors.indexOf(validationMessage) > -1;
+            validationMessages[fieldKey].errors.find(e => e.message === validationMessage);
           if (!match) {
-            validationMessages[fieldKey].errors.push(validations[fieldKey]);
+            validationMessages[fieldKey].errors.push({
+              code: fieldKey,
+              message: validations[fieldKey],
+            });
           }
         } else {
           validationMessages = {
             ...validationMessages,
             [fieldKey]: {
-              errors: [],
+              errors: [{
+                code: fieldKey,
+                message: validations[fieldKey],
+              }],
               warnings: [],
             },
           };
-          validationMessages[fieldKey].errors = [validations[fieldKey]];
         }
       }
     });

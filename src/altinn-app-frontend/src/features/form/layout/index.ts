@@ -1,5 +1,5 @@
 import { GridSize } from '@material-ui/core';
-import { IMapping, IOption, Triggers } from '../../../types';
+import { IMapping, IOption, ITextResourceBindings, Triggers } from 'src/types';
 
 export interface ILayouts {
   [id: string]: ILayout;
@@ -54,10 +54,6 @@ export type ComponentTypes =
   | 'NavigationBar';
 
 export interface IDataModelBindings {
-  [id: string]: string;
-}
-
-export interface ITextResourceBindings {
   [id: string]: string;
 }
 

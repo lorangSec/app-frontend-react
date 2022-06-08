@@ -27,7 +27,12 @@ describe('components > ErrorReport.tsx', () => {
         page1: {
           someComponent: {
             simpleBinding: {
-              errors: [getParsedLanguageFromText('some error')],
+              errors: [
+                {
+                  code: 'error',
+                  message: getParsedLanguageFromText('some error'),
+                },
+              ],
             },
           },
         },
@@ -54,7 +59,12 @@ describe('components > ErrorReport.tsx', () => {
             // unmapped component
             unmapped: {
               // unmapped data binding
-              errors: [getParsedLanguageFromText('some unmapped error')],
+              errors: [
+                {
+                  code: 'error',
+                  message: getParsedLanguageFromText('some unmapped error'),
+                },
+              ],
             },
           },
         },

@@ -5,12 +5,11 @@ import classNames from 'classnames';
 
 import type { IComponentProps } from '.';
 import type { ILanguage } from 'altinn-shared/types';
-import type { ILabelSettings, IComponentValidations } from 'src/types';
+import type { ILabelSettings, IComponentValidations, ITextResourceBindings } from 'src/types';
 import type {
   IDataModelBindings,
   IGrid,
   IGridStyling,
-  ITextResourceBindings,
 } from '../features/form/layout';
 
 import components from '.';
