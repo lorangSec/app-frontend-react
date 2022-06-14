@@ -40,7 +40,7 @@ describe('features / form / layout / fetch / fetchFormLayoutSagas', () => {
           [select(applicationMetadataSelector), application]
         ])
         .put(FormLayoutActions.setCurrentViewCacheKey({ key: instance.id }))
-        .put(FormLayoutActions.fetchLayoutFulfilled({ layouts: { page1: [] }, navigationConfig: { page1: undefined } }))
+        .put(FormLayoutActions.fetchLayoutFulfilled({ layouts: { page1: { data: { layout: [] } } }, navigationConfig: { page1: undefined } }))
         .put(FormLayoutActions.updateAutoSave({ autoSave: undefined }))
         .put(FormLayoutActions.updateCurrentView({ newView: 'page1', skipPageCaching: true }))
         .run();
@@ -71,7 +71,7 @@ describe('features / form / layout / fetch / fetchFormLayoutSagas', () => {
           [select(applicationMetadataSelector), application]
         ])
         .put(FormLayoutActions.setCurrentViewCacheKey({ key: instance.id }))
-        .put(FormLayoutActions.fetchLayoutFulfilled({ layouts: { page1: [], page2: [] }, navigationConfig: { page1: undefined, page2: undefined } }))
+        .put(FormLayoutActions.fetchLayoutFulfilled({ layouts: { page1: { data: { layout: [] } }, page2: { data: { layout: [] } } }, navigationConfig: { page1: undefined, page2: undefined } }))
         .put(FormLayoutActions.updateAutoSave({ autoSave: undefined }))
         .put(FormLayoutActions.updateCurrentView({ newView: 'page2', skipPageCaching: true }))
         .run();
@@ -89,7 +89,7 @@ describe('features / form / layout / fetch / fetchFormLayoutSagas', () => {
           [select(applicationMetadataSelector), application]
         ])
         .put(FormLayoutActions.setCurrentViewCacheKey({ key: instance.id }))
-        .put(FormLayoutActions.fetchLayoutFulfilled({ layouts: { page1: [], page2: [] }, navigationConfig: { page1: undefined, page2: undefined } }))
+        .put(FormLayoutActions.fetchLayoutFulfilled({ layouts: { page1: { data: { layout: [] } }, page2: { data: { layout: [] } } }, navigationConfig: { page1: undefined, page2: undefined } }))
         .put(FormLayoutActions.updateAutoSave({ autoSave: undefined }))
         .put(FormLayoutActions.updateCurrentView({ newView: 'page1', skipPageCaching: true }))
         .run();
@@ -104,7 +104,7 @@ describe('features / form / layout / fetch / fetchFormLayoutSagas', () => {
           [select(applicationMetadataSelector), application]
         ])
         .put(FormLayoutActions.setCurrentViewCacheKey({ key: instance.id }))
-        .put(FormLayoutActions.fetchLayoutFulfilled({ layouts: { page1: [] }, navigationConfig: { page1: undefined } }))
+        .put(FormLayoutActions.fetchLayoutFulfilled({ layouts: { page1: { data: { layout: [] } } }, navigationConfig: { page1: undefined } }))
         .put(FormLayoutActions.updateAutoSave({ autoSave: undefined }))
         .put(FormLayoutActions.updateCurrentView({ newView: 'page1', skipPageCaching: true }))
         .run();
@@ -119,7 +119,7 @@ describe('features / form / layout / fetch / fetchFormLayoutSagas', () => {
           [select(applicationMetadataSelector), application]
         ])
         .put(FormLayoutActions.setCurrentViewCacheKey({ key: application.id }))
-        .put(FormLayoutActions.fetchLayoutFulfilled({ layouts: { page1: [] }, navigationConfig: { page1: undefined } }))
+        .put(FormLayoutActions.fetchLayoutFulfilled({ layouts: { page1: { data: { layout: [] } } }, navigationConfig: { page1: undefined } }))
         .put(FormLayoutActions.updateAutoSave({ autoSave: undefined }))
         .put(FormLayoutActions.updateCurrentView({ newView: 'page1', skipPageCaching: true }))
         .run();

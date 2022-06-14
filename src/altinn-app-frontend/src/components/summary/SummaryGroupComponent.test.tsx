@@ -20,50 +20,54 @@ describe('SummaryGroupComponent', () => {
     const createStore = configureStore();
     const formLayout = getFormLayoutStateMock({
       layouts: {
-        page1: [
-          {
-            type: 'Group',
-            id: 'groupComponent',
-            dataModelBindings: {
-              group: 'mockGroup',
-            },
-            textResourceBindings: {
-              title: 'mockGroupTitle',
-            },
-            children: ['0:mockId1', '1:mockId2'],
-            edit: {
-              multiPage: true,
-            },
+        page1: {
+          data: {
+            layout: [
+              {
+                type: 'Group',
+                id: 'groupComponent',
+                dataModelBindings: {
+                  group: 'mockGroup',
+                },
+                textResourceBindings: {
+                  title: 'mockGroupTitle',
+                },
+                children: ['0:mockId1', '1:mockId2'],
+                edit: {
+                  multiPage: true,
+                },
+              },
+              {
+                type: 'Input',
+                id: 'mockId1',
+                dataModelBindings: {
+                  simpleBiding: 'mockGroup.mockDataBinding1',
+                },
+                readOnly: false,
+                required: false,
+                disabled: false,
+                textResourceBindings: {
+                  title: 'mockField1',
+                },
+                triggers: [],
+              },
+              {
+                type: 'Input',
+                id: 'mockId2',
+                dataModelBindings: {
+                  simpleBiding: 'mockGroup.mockDataBinding2',
+                },
+                readOnly: false,
+                required: false,
+                disabled: false,
+                textResourceBindings: {
+                  title: 'mockField2',
+                },
+                triggers: [],
+              },
+            ]
           },
-          {
-            type: 'Input',
-            id: 'mockId1',
-            dataModelBindings: {
-              simpleBiding: 'mockGroup.mockDataBinding1',
-            },
-            readOnly: false,
-            required: false,
-            disabled: false,
-            textResourceBindings: {
-              title: 'mockField1',
-            },
-            triggers: [],
-          },
-          {
-            type: 'Input',
-            id: 'mockId2',
-            dataModelBindings: {
-              simpleBiding: 'mockGroup.mockDataBinding2',
-            },
-            readOnly: false,
-            required: false,
-            disabled: false,
-            textResourceBindings: {
-              title: 'mockField2',
-            },
-            triggers: [],
-          },
-        ],
+        },
       },
       uiConfig: {
         autoSave: true,

@@ -21,34 +21,38 @@ const render = (props: Partial<IGenericComponentProps> = {}) => {
 
   const formLayout = getFormLayoutStateMock({
     layouts: {
-      FormLayout: [
-        {
-          type: 'Input',
-          id: 'mockId',
-          dataModelBindings: {
-            simpleBiding: 'mockDataBinding',
-          },
-          readOnly: false,
-          required: false,
-          disabled: false,
-          textResourceBindings: {},
-          triggers: [],
-          grid: {
-            xs: 12,
-            sm: 10,
-            md: 8,
-            lg: 6,
-            xl: 4,
-            innerGrid: {
-              xs: 11,
-              sm: 9,
-              md: 7,
-              lg: 5,
-              xl: 3,
+      FormLayout: {
+        data: {
+          layout: [
+            {
+              type: 'Input',
+              id: 'mockId',
+              dataModelBindings: {
+                simpleBiding: 'mockDataBinding',
+              },
+              readOnly: false,
+              required: false,
+              disabled: false,
+              textResourceBindings: {},
+              triggers: [],
+              grid: {
+                xs: 12,
+                sm: 10,
+                md: 8,
+                lg: 6,
+                xl: 4,
+                innerGrid: {
+                  xs: 11,
+                  sm: 9,
+                  md: 7,
+                  lg: 5,
+                  xl: 3,
+                },
+              },
             },
-          },
+          ]
         },
-      ],
+      },
     },
   });
 

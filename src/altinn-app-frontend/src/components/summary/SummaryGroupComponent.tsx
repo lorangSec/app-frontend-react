@@ -101,7 +101,7 @@ function SummaryGroupComponent({
   const groupComponent = useAppSelector(
     (state) =>
       getComponentForSummaryGroup(
-        state.formLayout.layouts[pageRef],
+        state.formLayout.layouts[pageRef].data.layout,
         componentRef,
       ),
     shallowEqual,
@@ -180,7 +180,7 @@ function SummaryGroupComponent({
         }
 
         groupChildComponents.forEach((componentId: string) => {
-          const component: ILayoutComponent = layout.find(
+          const component: ILayoutComponent = layout.data.layout.find(
             (c: ILayoutComponent) => c.id === componentId,
           ) as ILayoutComponent;
           const componentIdWithIndex = `${component.id}${
@@ -212,7 +212,7 @@ function SummaryGroupComponent({
     for (let i = 0; i <= repeatingGroupMaxIndex; ++i) {
       const childSummaryComponents = groupChildComponents.map(
         (componentId: string) => {
-          const component: ILayoutComponent = layout.find(
+          const component: ILayoutComponent = layout.data.layout.find(
             (c: ILayoutComponent) => c.id === componentId,
           ) as ILayoutComponent;
           const componentDeepCopy = JSON.parse(JSON.stringify(component));
@@ -226,7 +226,7 @@ function SummaryGroupComponent({
               `${groupComponent.dataModelBindings.group}[${i}]`,
             );
             if (parentGroup) {
-              const { dataModelBindings } = layout.find(
+              const { dataModelBindings } = layout.data.layout.find(
                 (c) => c.id === parentGroup,
               );
               binding = binding.replace(
@@ -287,7 +287,7 @@ function SummaryGroupComponent({
       };
       const childSummaryComponents = [];
       groupChildComponents.forEach((componentId: string) => {
-        const component = layout.find(
+        const component = layout.data.layout.find(
           (c: ILayoutComponent) => c.id === componentId,
         );
         const isGroupComponent = component.type.toLowerCase() === 'group';

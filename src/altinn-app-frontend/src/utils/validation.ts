@@ -186,7 +186,7 @@ export function validateEmptyFields(
     if (layoutOrder.includes(id)) {
       const result = validateEmptyFieldsForLayout(
         formData,
-        layouts[id],
+        layouts[id].data.layout,
         language,
         hiddenFields,
         repeatingGroups,
@@ -787,7 +787,7 @@ export function validateFormData(
     if (layoutOrder.includes(id)) {
       const result = validateFormDataForLayout(
         formData,
-        layouts[id],
+        layouts[id].data.layout,
         id,
         schemaValidator,
         language,
@@ -1034,7 +1034,7 @@ export function findLayoutIdsFromValidationIssue(
     return ['unmapped'];
   }
   return Object.keys(layouts).filter((id) => {
-    const foundInLayout = layouts[id].find((c: ILayoutComponent) => {
+    const foundInLayout = layouts[id].data.layout.find((c: ILayoutComponent) => {
       // Special handling for FileUpload components
       if (c.type === 'FileUpload' || c.type === 'FileUploadWithTag') {
         return c.id === validationIssue.field;
@@ -1132,7 +1132,7 @@ export function mapDataElementValidationToRedux(
     layoutIds.forEach((layoutId) => {
       const { componentId, component, componentValidations } =
         findComponentFromValidationIssue(
-          layouts[layoutId] || [],
+          layouts[layoutId].data.layout || [],
           validation,
           textResources,
         );
@@ -1540,7 +1540,7 @@ export function validateGroup(
   const formData = state.formData.formData;
   const jsonFormData = convertDataBindingToModel(formData);
   const currentView = state.formLayout.uiConfig.currentView;
-  const currentLayout = state.formLayout.layouts[currentView];
+  const currentLayout = state.formLayout.layouts[currentView].data.layout;
   const groups = currentLayout.filter(
     (layoutElement) => layoutElement.type.toLowerCase() === 'group',
   );
@@ -1642,11 +1642,11 @@ export function removeGroupValidationsByIndex(
   delete result[currentLayout][indexedId];
   const children = getGroupChildren(
     repeatingGroup.baseGroupId || id,
-    layout[currentLayout],
+    layout[currentLayout].data.layout,
   );
   const parentGroup = getParentGroup(
     repeatingGroup.baseGroupId || id,
-    layout[currentLayout],
+    layout[currentLayout].data.layout,
   );
 
   // Remove validations for child elements on given index
@@ -1710,7 +1710,7 @@ export function removeGroupValidationsByIndex(
               i,
               result,
               repeatingGroups,
-              layout[currentLayout],
+              layout[currentLayout].data.layout,
               currentLayout,
             );
           }

@@ -34,7 +34,7 @@ export function DisplayGroupContainer(props: IDisplayGroupContainer) {
     }
     return undefined;
   });
-  const layout = useAppSelector(state => state.formLayout.layouts[state.formLayout.uiConfig.currentView]);
+  const layout = useAppSelector(state => state.formLayout.layouts[state.formLayout.uiConfig.currentView].data.layout);
 
   if (hidden) {
     return null;

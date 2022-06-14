@@ -111,7 +111,7 @@ const createLayout = (
     error: null,
     layoutsets: null,
     layouts: {
-      FormLayout: [container, ...components],
+      FormLayout: { data: { layout: [container, ...components] } },
     },
     uiConfig: {
       hiddenFields: [],

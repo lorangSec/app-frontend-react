@@ -17,7 +17,7 @@ export function getLayoutComponentById(
   let component: ILayoutComponent;
   Object.keys(layouts).forEach((layoutId) => {
     if (!component) {
-      component = layouts[layoutId].find((element) => {
+      component = layouts[layoutId].data.layout.find((element) => {
         // Check against provided id, with potential -{index} postfix.
         const match = matchLayoutComponent(id, element.id);
         return match && match.length > 0;
@@ -32,7 +32,7 @@ export function getLayoutIdForComponent(id: string, layouts: ILayouts): string {
   let foundLayout: string;
   Object.keys(layouts).forEach((layoutId) => {
     if (!foundLayout) {
-      const component = layouts[layoutId].find((element) => {
+      const component = layouts[layoutId].data.layout.find((element) => {
         // Check against provided id, with potential -{index} postfix.
         const match = matchLayoutComponent(id, element.id);
         return match && match.length > 0;

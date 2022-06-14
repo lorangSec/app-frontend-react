@@ -76,7 +76,7 @@ export function SummaryComponent({ id, grid, ...summaryProps }: ISummaryComponen
     (state) => state.formLayout.layouts[pageRef],
   );
   const formComponent = useAppSelector((state) => {
-    return state.formLayout.layouts[pageRef].find(
+    return state.formLayout.layouts[pageRef].data.layout.find(
       (c) => c.id === componentRef,
     );
   });

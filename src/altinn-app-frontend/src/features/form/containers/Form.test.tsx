@@ -95,7 +95,7 @@ describe('Form.tsx', () => {
           ...customState,
           formLayout: getFormLayoutStateMock({
             layouts: {
-              FormLayout: layout,
+              FormLayout: { data: { layout } },
             }
           }),
         },

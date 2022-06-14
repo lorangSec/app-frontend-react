@@ -21,7 +21,7 @@ describe('AttachmentWithTagSummaryComponent', () => {
   const mockState = (formLayoutItem: ISelectionComponentProps) => ({
     formLayout: {
       layouts: {
-        FormLayout: [formLayoutItem],
+        FormLayout: { data: { layout: [formLayoutItem] } },
       },
       uiConfig: undefined,
       layoutsets: undefined,

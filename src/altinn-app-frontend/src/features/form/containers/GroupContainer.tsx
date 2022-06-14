@@ -94,7 +94,7 @@ export function GroupContainer({
   const hidden = useAppSelector((state) => GetHiddenSelector(state, { id }));
   const formData = useAppSelector((state) => state.formData.formData);
   const layout = useAppSelector(
-    (state) => state.formLayout.layouts[state.formLayout.uiConfig.currentView],
+    (state) => state.formLayout.layouts[state.formLayout.uiConfig.currentView].data.layout,
   );
   const options = useAppSelector((state) => state.optionState.options);
   const textResources = useAppSelector(

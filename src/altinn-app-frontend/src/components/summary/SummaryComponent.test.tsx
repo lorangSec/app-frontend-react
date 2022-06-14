@@ -17,26 +17,30 @@ describe('SummaryComponent', () => {
   const layoutMock = (): ILayoutState =>
     getFormLayoutStateMock({
       layouts: {
-        [pageId]: [
-          ...[
-            defaultId,
-            'group',
-            'Group',
-            'FileUpload',
-            'FileUploadWithTag',
-            'Checkboxes',
-          ].map(
-            (t) =>
-              ({
-                id: t,
-                type: t,
-                dataModelBindings: {},
-                textResourceBindings: {},
-                children: [],
-                maxCount: 0,
-              } as ILayoutComponent),
-          ),
-        ],
+        [pageId]: {
+          data: {
+            layout: [
+              ...[
+                defaultId,
+                'group',
+                'Group',
+                'FileUpload',
+                'FileUploadWithTag',
+                'Checkboxes',
+              ].map(
+                (t) =>
+                ({
+                  id: t,
+                  type: t,
+                  dataModelBindings: {},
+                  textResourceBindings: {},
+                  children: [],
+                  maxCount: 0,
+                } as ILayoutComponent),
+              ),
+            ]
+          },
+        },
       },
     });
   test('should render group', () => {

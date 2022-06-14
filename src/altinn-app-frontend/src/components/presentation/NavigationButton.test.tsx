@@ -19,48 +19,56 @@ describe('components/presentation/NavigationButton.tsx', () => {
   beforeAll(() => {
     mockLayout = getFormLayoutStateMock({
       layouts: {
-        layout1: [
-          {
-            type: 'Input',
-            id: 'mockId1',
-            dataModelBindings: {
-              simpleBiding: 'mockDataBinding1',
-            },
-            readOnly: false,
-            required: false,
-            disabled: false,
-            textResourceBindings: {},
+        layout1: {
+          data: {
+            layout: [
+              {
+                type: 'Input',
+                id: 'mockId1',
+                dataModelBindings: {
+                  simpleBiding: 'mockDataBinding1',
+                },
+                readOnly: false,
+                required: false,
+                disabled: false,
+                textResourceBindings: {},
+              },
+              {
+                id: 'nav-button-1',
+                type: 'NavigationButtons',
+                textResourceBindings: {},
+                dataModelBindings: {},
+                readOnly: false,
+                required: false,
+              },
+            ]
           },
-          {
-            id: 'nav-button-1',
-            type: 'NavigationButtons',
-            textResourceBindings: {},
-            dataModelBindings: {},
-            readOnly: false,
-            required: false,
+        },
+        layout2: {
+          data: {
+            layout: [
+              {
+                type: 'Input',
+                id: 'mockId2',
+                dataModelBindings: {
+                  simpleBiding: 'mockDataBinding2',
+                },
+                readOnly: false,
+                required: false,
+                disabled: false,
+                textResourceBindings: {},
+              },
+              {
+                id: 'nav-button-2',
+                type: 'NavigationButtons',
+                textResourceBindings: {},
+                dataModelBindings: {},
+                readOnly: false,
+                required: false,
+              },
+            ]
           },
-        ],
-        layout2: [
-          {
-            type: 'Input',
-            id: 'mockId2',
-            dataModelBindings: {
-              simpleBiding: 'mockDataBinding2',
-            },
-            readOnly: false,
-            required: false,
-            disabled: false,
-            textResourceBindings: {},
-          },
-          {
-            id: 'nav-button-2',
-            type: 'NavigationButtons',
-            textResourceBindings: {},
-            dataModelBindings: {},
-            readOnly: false,
-            required: false,
-          },
-        ],
+        },
       },
       uiConfig: {
         currentView: 'layout1',

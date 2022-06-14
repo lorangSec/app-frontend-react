@@ -72,7 +72,7 @@ export function Form() {
   const [requiredFieldsMissing, setRequiredFieldsMissing] = React.useState(false);
 
   const currentView = useAppSelector(state => state.formLayout.uiConfig.currentView);
-  const layout = useAppSelector(state => state.formLayout.layouts[state.formLayout.uiConfig.currentView]);
+  const layout = useAppSelector(state => state.formLayout.layouts[state.formLayout.uiConfig.currentView].data.layout);
   const language = useAppSelector(state => state.language.language);
   const validations = useAppSelector(state => state.formValidations.validations);
 

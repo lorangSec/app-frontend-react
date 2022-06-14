@@ -94,7 +94,7 @@ describe('features > form > containers > RepeatingGroupTable.tsx', () => {
 
     mockLayout = {
       layouts: {
-        FormLayout: [].concat(mockContainer).concat(mockComponents),
+        FormLayout: { data: { layout: [].concat(mockContainer).concat(mockComponents) } },
       },
       uiConfig: {
         hiddenFields: [],
@@ -142,7 +142,7 @@ describe('features > form > containers > RepeatingGroupTable.tsx', () => {
         formData={mockData}
         hiddenFields={[]}
         id={mockContainer.id}
-        layout={mockLayout.layouts[mockCurrentView]}
+        layout={mockLayout.layouts[mockCurrentView].data.layout}
         options={{}}
         repeatingGroupDeepCopyComponents={mockRepeatingGroupDeepCopyComponents}
         repeatingGroupIndex={repeatingGroupIndex}

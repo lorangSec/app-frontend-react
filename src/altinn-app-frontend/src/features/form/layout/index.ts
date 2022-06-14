@@ -3,7 +3,7 @@ import { IMapping, IOption, Triggers } from '../../../types';
 import { ILayoutDynamicsExpr } from "src/features/form/dynamics/layoutDynamics/types";
 
 export interface ILayouts {
-  [id: string]: ILayout;
+  [id: string]: IFormLayout;
 }
 
 export interface ILayoutEntry {
@@ -65,6 +65,15 @@ export interface IDataModelBindings {
 
 export interface ITextResourceBindings {
   [id: string]: string;
+}
+
+export interface IFormLayout {
+  data: ILayoutData;
+  hidden2?: ILayoutDynamicsExpr;
+}
+
+export interface ILayoutData {
+  layout: ILayout;
 }
 
 export type ILayout = Array<ILayoutComponent | ILayoutGroup>;

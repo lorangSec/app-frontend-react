@@ -5,11 +5,10 @@ import { all, call, put, select, take, takeEvery, takeLatest } from 'redux-saga/
 import { IFileUploadersWithTag, IFormFileUploaderWithTagComponent, IRepeatingGroups, IRuntimeState, IValidationIssue, IValidations, Triggers } from 'src/types';
 import { getFileUploadersWithTag, getRepeatingGroups, removeRepeatingGroupFromUIConfig } from 'src/utils/formLayout';
 import { AxiosRequestConfig } from 'axios';
-import { get, post } from 'altinn-shared/utils';
-import { getCurrentTaskDataElementId, getDataTaskDataTypeId, isStatelessApp, getCurrentDataTypeForApplication } from 'src/utils/appMetadata';
-import { getCalculatePageOrderUrl, getDataValidationUrl } from 'src/utils/appUrlHelper';
+import { get } from 'altinn-shared/utils';
+import { getCurrentTaskDataElementId, getDataTaskDataTypeId } from 'src/utils/appMetadata';
+import { getDataValidationUrl } from 'src/utils/appUrlHelper';
 import { validateFormData, validateFormComponents, validateEmptyFields, mapDataElementValidationToRedux, canFormBeSaved, mergeValidationObjects, removeGroupValidationsByIndex, validateGroup, getValidator } from 'src/utils/validation';
-import { getLayoutsetForDataElement } from 'src/utils/layout';
 import { startInitialDataTaskQueueFulfilled } from 'src/shared/resources/queue/queueSlice';
 import { updateValidations } from 'src/features/form/validation/validationSlice';
 import { IAttachmentState } from 'src/shared/resources/attachments/attachmentReducer';
@@ -21,6 +20,7 @@ import { IFormDataState } from '../../data/formDataReducer';
 import FormDataActions from '../../data/formDataActions';
 import { convertDataBindingToModel, removeGroupData } from '../../../../utils/databindings';
 import { getOptionLookupKey } from 'src/utils/options';
+import { runDynamicsForLayouts } from '../../dynamics/layoutDynamics/runner';
 
 const selectFormLayoutState = (state: IRuntimeState): ILayoutState => state.formLayout;
 const selectFormData = (state: IRuntimeState): IFormDataState => state.formData;
@@ -31,7 +31,7 @@ function* updateFocus({ payload: { currentComponentId, step } }: PayloadAction<I
   try {
     const formLayoutState: ILayoutState = yield select(selectFormLayoutState);
     if (currentComponentId) {
-      const layout = formLayoutState.layouts[formLayoutState.uiConfig.currentView];
+      const layout = formLayoutState.layouts[formLayoutState.uiConfig.currentView].data.layout;
       const currentComponentIndex = layout
         .findIndex((component: ILayoutComponent) => component.id === currentComponentId);
       const focusComponentIndex = step ? currentComponentIndex + step : currentComponentIndex;
@@ -62,9 +62,9 @@ function* updateRepeatingGroupsSaga({ payload: {
       },
     };
 
-    const groupContainer: ILayoutGroup = formLayoutState.layouts[formLayoutState.uiConfig.currentView].find((element) => element.id === layoutElementId) as ILayoutGroup;
+    const groupContainer: ILayoutGroup = formLayoutState.layouts[formLayoutState.uiConfig.currentView].data.layout.find((element) => element.id === layoutElementId) as ILayoutGroup;
     const children = groupContainer?.children;
-    const childGroups: (ILayoutGroup | ILayoutComponent)[] = formLayoutState.layouts[formLayoutState.uiConfig.currentView].filter(
+    const childGroups: (ILayoutGroup | ILayoutComponent)[] = formLayoutState.layouts[formLayoutState.uiConfig.currentView].data.layout.filter(
       (element) => {
         if (element.type.toLowerCase() !== 'group') {
           return false;
@@ -97,7 +97,7 @@ function* updateRepeatingGroupsSaga({ payload: {
       // Remove the form data associated with the group
       const formDataState: IFormDataState = yield select(selectFormData);
       const state: IRuntimeState = yield select();
-      const layout = formLayoutState.layouts[formLayoutState.uiConfig.currentView];
+      const layout = formLayoutState.layouts[formLayoutState.uiConfig.currentView].data.layout;
       const updatedFormData = removeGroupData(formDataState.formData, index,
         layout, layoutElementId, formLayoutState.uiConfig.repeatingGroups[layoutElementId]);
 
@@ -207,43 +207,10 @@ export function* updateCurrentViewSaga({ payload: {
 export function* calculatePageOrderAndMoveToNextPageSaga({ payload: { runValidations, skipMoveToNext } }: PayloadAction<ICalculatePageOrderAndMoveToNextPage>): SagaIterator {
   try {
     const state: IRuntimeState = yield select();
-    const layoutSets = state.formLayout.layoutsets;
     const currentView = state.formLayout.uiConfig.currentView;
-    let layoutSetId: string = null;
-    let dataTypeId: string = null;
-    const formData = convertDataBindingToModel(state.formData.formData);
-    const appIsStateless = isStatelessApp(state.applicationMetadata.applicationMetadata)
-    if (appIsStateless) {
-      dataTypeId = getCurrentDataTypeForApplication({
-        application: state.applicationMetadata.applicationMetadata,
-        layoutSets: state.formLayout.layoutsets,
-      });
-      layoutSetId = state.applicationMetadata.applicationMetadata.onEntry.show;
-    } else {
-      const instance = state.instanceData.instance;
-      dataTypeId = getDataTaskDataTypeId(
-        instance.process.currentTask.elementId,
-        state.applicationMetadata.applicationMetadata.dataTypes
-      );
-      if (layoutSets != null) {
-        layoutSetId = getLayoutsetForDataElement(instance, dataTypeId, layoutSets);
-      }
-    }
-    const layoutOrder = yield call(
-      post,
-      getCalculatePageOrderUrl(appIsStateless),
-      formData,
-      {
-        params: {
-          currentPage: currentView,
-          layoutSetId,
-          dataTypeId,
-        },
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      },
-    );
+    const layouts = Object.keys(state.formLayout.layouts);
+    const hiddenLayouts = runDynamicsForLayouts(state.formLayout.layouts, state.formData.formData);
+    const layoutOrder = layouts.filter((layout) => !hiddenLayouts.includes(layout));
     yield put(FormLayoutActions.calculatePageOrderAndMoveToNextPageFulfilled({ order: layoutOrder }));
     if (skipMoveToNext) {
       return;
@@ -252,11 +219,7 @@ export function* calculatePageOrderAndMoveToNextPageSaga({ payload: { runValidat
     const newView = returnToView || layoutOrder[layoutOrder.indexOf(currentView) + 1];
     yield put(FormLayoutActions.updateCurrentView({ newView, runValidations }));
   } catch (error) {
-    if (error?.response?.status === 404) {
-      // We accept that the app does noe have defined a calculate page order as this is not default for older apps
-    } else {
-      yield put(FormLayoutActions.calculatePageOrderAndMoveToNextPageRejected({ error }));
-    }
+    yield put(FormLayoutActions.calculatePageOrderAndMoveToNextPageRejected({ error }));
   }
 }
 
@@ -275,7 +238,7 @@ export function* watchInitialCalculagePageOrderAndMoveToNextPageSaga(): SagaIter
     const layouts = state.formLayout.layouts;
     const pageTriggers = state.formLayout.uiConfig.pageTriggers;
     const appHasCalculateTrigger = pageTriggers?.includes(Triggers.CalculatePageOrder) || Object.keys(layouts).some((layout) => {
-      return layouts[layout].some((element: ILayoutEntry) => {
+      return layouts[layout].data.layout.some((element: ILayoutEntry) => {
         if (element.type === 'NavigationButtons') {
           const layoutComponent = element as ILayoutComponent;
           if (layoutComponent?.triggers?.includes(Triggers.CalculatePageOrder)) {
@@ -353,7 +316,7 @@ export function* initRepeatingGroupsSaga(): SagaIterator {
   Object.keys(layouts).forEach((layoutKey: string) => {
     newGroups = {
       ...newGroups,
-      ...getRepeatingGroups(layouts[layoutKey], formDataState.formData),
+      ...getRepeatingGroups(layouts[layoutKey].data.layout, formDataState.formData),
     };
   });
   // if any groups have been removed as part of calculation we delete the associated validations
@@ -422,7 +385,7 @@ export function* updateFileUploaderWithTagChosenOptionsSaga({ payload: {
     // Validate option to available options
     const state: IRuntimeState = yield select();
     const currentView = state.formLayout.uiConfig.currentView;
-    const component = state.formLayout.layouts[currentView]
+    const component = state.formLayout.layouts[currentView].data.layout
       .find((component: ILayoutComponent) => component.id === uploader) as unknown as IFormFileUploaderWithTagComponent;
     const componentOptions = state.optionState.options[getOptionLookupKey(component.optionsId, component.mapping)]?.options;
     if (componentOptions.find(op => op.value === option.value)) {
@@ -448,7 +411,7 @@ export function* initFileUploaderWithTagSaga(): SagaIterator {
   Object.keys(layouts).forEach((layoutKey: string) => {
     newUploads = {
       ...newUploads,
-      ...getFileUploadersWithTag(layouts[layoutKey], attachmentState),
+      ...getFileUploadersWithTag(layouts[layoutKey].data.layout, attachmentState),
     };
   });
   yield put(FormLayoutActions.updateFileUploadersWithTagFulfilled({ uploaders: newUploads }));

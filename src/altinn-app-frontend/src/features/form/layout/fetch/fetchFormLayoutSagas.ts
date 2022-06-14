@@ -27,7 +27,7 @@ export function* fetchLayoutSaga(): SagaIterator {
     let autoSave: boolean;
     let firstLayoutKey: string;
     if (layoutResponse.data?.layout) {
-      layouts.FormLayout = layoutResponse.data.layout;
+      layouts.FormLayout = layoutResponse;
       firstLayoutKey = 'FormLayout';
       autoSave = layoutResponse.data.autoSave;
     } else {
@@ -45,7 +45,7 @@ export function* fetchLayoutSaga(): SagaIterator {
       }
 
       orderedLayoutKeys.forEach((key) => {
-        layouts[key] = layoutResponse[key].data.layout;
+        layouts[key] = layoutResponse[key];
         navigationConfig[key] = layoutResponse[key].data.navigation;
         autoSave = layoutResponse[key].data.autoSave;
       });

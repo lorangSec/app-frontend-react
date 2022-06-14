@@ -87,47 +87,51 @@ describe('shared > resources > options > fetch > fetchOptionsSagas', () => {
     it('should spawn fetchSpecificOptionSaga for each unique optionsId', () => {
       jest.spyOn(networking, 'get').mockResolvedValue([]);
       const formLayoutWithTwoSharedOptionIds: ILayouts = {
-        formLayout: [
-          {
-            id: 'fylke',
-            type: 'Dropdown',
-            textResourceBindings: {
-              'title': 'fylke'
-            },
-            dataModelBindings: {
-              simpleBinding: 'FlytteFra.Fylke'
-            },
-            optionsId: 'fylke',
-            required: true
-          } as ISelectionComponentProps,
-          {
-            id: 'fylke-2',
-            type: 'Dropdown',
-            textResourceBindings: {
-              title: 'fylke'
-            },
-            dataModelBindings: {
-              simpleBinding: 'FlytteFra.Fylke'
-            },
-            optionsId: 'fylke',
-            required: true
-          } as ISelectionComponentProps,
-          {
-            id: 'kommune',
-            type: 'Dropdown',
-            textResourceBindings: {
-              title: 'kommune'
-            },
-            dataModelBindings: {
-              simpleBinding: 'FlytteFra.Kommune'
-            },
-            optionsId: 'kommune',
-            required: true,
-            mapping: {
-              'FlytteFra.Fylke': 'fylke'
-            }
-          } as ISelectionComponentProps,
-        ]
+        formLayout: {
+          data: {
+            layout: [
+              {
+                id: 'fylke',
+                type: 'Dropdown',
+                textResourceBindings: {
+                  'title': 'fylke'
+                },
+                dataModelBindings: {
+                  simpleBinding: 'FlytteFra.Fylke'
+                },
+                optionsId: 'fylke',
+                required: true
+              } as ISelectionComponentProps,
+              {
+                id: 'fylke-2',
+                type: 'Dropdown',
+                textResourceBindings: {
+                  title: 'fylke'
+                },
+                dataModelBindings: {
+                  simpleBinding: 'FlytteFra.Fylke'
+                },
+                optionsId: 'fylke',
+                required: true
+              } as ISelectionComponentProps,
+              {
+                id: 'kommune',
+                type: 'Dropdown',
+                textResourceBindings: {
+                  title: 'kommune'
+                },
+                dataModelBindings: {
+                  simpleBinding: 'FlytteFra.Kommune'
+                },
+                optionsId: 'kommune',
+                required: true,
+                mapping: {
+                  'FlytteFra.Fylke': 'fylke'
+                }
+              } as ISelectionComponentProps,
+            ]
+          },
+        },
       };
 
       return expectSaga(fetchOptionsSaga)
@@ -155,38 +159,42 @@ describe('shared > resources > options > fetch > fetchOptionsSagas', () => {
     it('should spawn multiple fetchSpecificOptionSaga if components have shared optionsId but different mapping', () => {
       jest.spyOn(networking, 'get').mockResolvedValue([]);
       const formLayoutWithSameOptionIdButDifferentMapping: ILayouts = {
-        formLayout: [
-          {
-            id: 'kommune-1',
-            type: 'Dropdown',
-            textResourceBindings: {
-              title: 'kommune'
-            },
-            dataModelBindings: {
-              simpleBinding: 'FlytteFra.Kommune'
-            },
-            optionsId: 'kommune',
-            required: true,
-            mapping: {
-              'FlytteFra.Fylke': 'fylke'
-            }
-          } as ISelectionComponentProps,
-          {
-            id: 'kommune-2',
-            type: 'Dropdown',
-            textResourceBindings: {
-              title: 'kommune'
-            },
-            dataModelBindings: {
-              simpleBinding: 'FlytteTil.Kommune'
-            },
-            optionsId: 'kommune',
-            required: true,
-            mapping: {
-              'FlytteTil.Fylke': 'fylke'
-            }
-          } as ISelectionComponentProps,
-        ]
+        formLayout: {
+          data: {
+            layout: [
+              {
+                id: 'kommune-1',
+                type: 'Dropdown',
+                textResourceBindings: {
+                  title: 'kommune'
+                },
+                dataModelBindings: {
+                  simpleBinding: 'FlytteFra.Kommune'
+                },
+                optionsId: 'kommune',
+                required: true,
+                mapping: {
+                  'FlytteFra.Fylke': 'fylke'
+                }
+              } as ISelectionComponentProps,
+              {
+                id: 'kommune-2',
+                type: 'Dropdown',
+                textResourceBindings: {
+                  title: 'kommune'
+                },
+                dataModelBindings: {
+                  simpleBinding: 'FlytteTil.Kommune'
+                },
+                optionsId: 'kommune',
+                required: true,
+                mapping: {
+                  'FlytteTil.Fylke': 'fylke'
+                }
+              } as ISelectionComponentProps,
+            ]
+          },
+        },
       };
 
       return expectSaga(fetchOptionsSaga)

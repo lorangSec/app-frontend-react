@@ -25,7 +25,7 @@ export function* fetchOptionsSaga(): SagaIterator {
   const layouts: ILayouts = yield select(formLayoutSelector);
   const fetchedOptions: string[] = [];
   for (const layoutId of Object.keys(layouts)) {
-    for (const element of layouts[layoutId]) {
+    for (const element of layouts[layoutId].data.layout) {
       const { optionsId, mapping, secure }  = element as ISelectionComponentProps
       const lookupKey = getOptionLookupKey(optionsId, mapping);
       if (

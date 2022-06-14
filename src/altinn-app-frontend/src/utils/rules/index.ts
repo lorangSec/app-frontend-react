@@ -51,7 +51,7 @@ export function checkIfRuleShouldRun(
         let updatedComponent: string;
         Object.keys(layouts).forEach((id) => {
           const layout = layouts[id];
-          layout.forEach((layoutElement) => {
+          layout.data.layout.forEach((layoutElement) => {
             if (layoutElement.type.toLowerCase() === 'group') {
               return;
             }
