@@ -9,12 +9,16 @@ import * as FormDynamicsActionTypes from '../formDynamicsActionTypes';
 import * as RulesActionTypes from '../../rules/rulesActionTypes';
 import { ILayouts } from "src/features/form/layout";
 import { runLayoutDynamics } from "src/features/form/dynamics/layoutDynamics/runner";
+import { buildInstanceContext } from 'altinn-shared/utils/instanceContext';
+import type { IApplicationSettings, IInstance } from 'altinn-shared/types';
 
 export const FormDataSelector: (store: IRuntimeState) => IFormData = (store) => store.formData.formData;
 export const FormLayoutsSelector: (store: IRuntimeState) => ILayouts = (store) => store.formLayout.layouts;
 export const UiConfigSelector: (store: IRuntimeState) => IUiConfig = (store) => store.formLayout.uiConfig;
 export const FormValidationSelector: (store: IRuntimeState) =>
   IValidations = (store) => store.formValidations.validations;
+export const ApplicationSettingsSelector: (store: IRuntimeState) => IApplicationSettings = (store) => store.applicationSettings.applicationSettings;
+export const InstanceSelector: (store: IRuntimeState) => IInstance = (store) => store.instanceData?.instance;
 
 function* checkIfConditionalRulesShouldRunSaga(): SagaIterator {
   try {
@@ -22,11 +26,17 @@ function* checkIfConditionalRulesShouldRunSaga(): SagaIterator {
     const formLayouts:ILayouts = yield select(FormLayoutsSelector);
     const formValidations: IValidations = yield select(FormValidationSelector);
     const uiConfig: IUiConfig = yield select(UiConfigSelector);
+    const applicationSettings: IApplicationSettings = yield select(ApplicationSettingsSelector)
+    const instance: IInstance = yield select(InstanceSelector);
+
+    const instanceContext = buildInstanceContext(instance);
 
     const componentsToHide: string[] = runLayoutDynamics(
       (component) => component.hidden2,
       formLayouts,
       formData,
+      instanceContext,
+      applicationSettings,
       uiConfig.repeatingGroups,
     );
 

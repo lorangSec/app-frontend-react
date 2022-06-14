@@ -21,6 +21,7 @@ import FormDataActions from '../../data/formDataActions';
 import { convertDataBindingToModel, removeGroupData } from '../../../../utils/databindings';
 import { getOptionLookupKey } from 'src/utils/options';
 import { runDynamicsForLayouts } from '../../dynamics/layoutDynamics/runner';
+import { buildInstanceContext } from 'altinn-shared/utils/instanceContext';
 
 const selectFormLayoutState = (state: IRuntimeState): ILayoutState => state.formLayout;
 const selectFormData = (state: IRuntimeState): IFormDataState => state.formData;
@@ -209,7 +210,9 @@ export function* calculatePageOrderAndMoveToNextPageSaga({ payload: { runValidat
     const state: IRuntimeState = yield select();
     const currentView = state.formLayout.uiConfig.currentView;
     const layouts = Object.keys(state.formLayout.layouts);
-    const hiddenLayouts = runDynamicsForLayouts(state.formLayout.layouts, state.formData.formData);
+    const instanceContext = buildInstanceContext(state.instanceData?.instance);
+    const applicationSettings = state.applicationSettings.applicationSettings;
+    const hiddenLayouts = runDynamicsForLayouts(state.formLayout.layouts, state.formData.formData, instanceContext, applicationSettings);
     const layoutOrder = layouts.filter((layout) => !hiddenLayouts.includes(layout));
     yield put(FormLayoutActions.calculatePageOrderAndMoveToNextPageFulfilled({ order: layoutOrder }));
     if (skipMoveToNext) {
