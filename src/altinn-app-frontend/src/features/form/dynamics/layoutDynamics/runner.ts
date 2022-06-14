@@ -13,13 +13,27 @@ export function runLayoutDynamics(
   const out:string[] = [];
 
   for (const layout of Object.values(layouts)) {
-    for (const component of iterateFieldsInLayout(layout, [], repeatingGroups)) {
+    for (const component of iterateFieldsInLayout(layout, repeatingGroups)) {
       const maybeExpr = findExpr(component.component);
-      console.log(component, maybeExpr);
+      if (typeof maybeExpr === 'undefined') {
+        continue;
+      }
 
-      // TODO: Implement
+      if (typeof maybeExpr === 'boolean' && maybeExpr) {
+        out.push(component.component.id);
+      } else if (typeof maybeExpr === 'object') {
+        const result = runLayoutExpression(maybeExpr as ILayoutDynamicsExpr);
+        if (result) {
+          out.push(component.component.id);
+        }
+      }
     }
   }
 
   return out;
+}
+
+function runLayoutExpression(expr:ILayoutDynamicsExpr):boolean {
+  console.log(expr);
+  return false;
 }
