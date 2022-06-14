@@ -1,8 +1,13 @@
 import { ILayouts, ILayoutComponent, ILayoutGroup } from "src/features/form/layout";
 import { IFormData } from "src/features/form/data/formDataReducer";
 import { IRepeatingGroups } from "src/types";
-import { ILayoutDynamicsExpr } from "src/features/form/dynamics/layoutDynamics/types";
-import { IteratedComponent, iterateFieldsAndGroupsInLayout } from "src/utils/validation";
+import {
+  ILayoutDynamicsExpr,
+  ILayoutDynamicsArg,
+  ILayoutDynamicsDataModelArg
+} from "src/features/form/dynamics/layoutDynamics/types";
+import { iterateFieldsAndGroupsInLayout } from "src/utils/validation";
+import { layoutDynamicsFunctions } from "src/features/form/dynamics/layoutDynamics/functions";
 
 export function runLayoutDynamics(
   findExpr:(component:ILayoutComponent|ILayoutGroup)=>undefined|boolean|ILayoutDynamicsExpr,
@@ -22,7 +27,7 @@ export function runLayoutDynamics(
       if (typeof maybeExpr === 'boolean' && maybeExpr) {
         out.push(component.component.id);
       } else if (typeof maybeExpr === 'object') {
-        const result = runLayoutExpression(maybeExpr as ILayoutDynamicsExpr, formData, component);
+        const result = runLayoutExpression(maybeExpr as ILayoutDynamicsExpr, formData);
         if (result) {
           out.push(component.component.id);
         }
@@ -36,8 +41,25 @@ export function runLayoutDynamics(
 function runLayoutExpression(
   expr: ILayoutDynamicsExpr,
   formData: IFormData,
-  component: IteratedComponent<ILayoutComponent | ILayoutGroup>,
+  // component: IteratedComponent<ILayoutComponent | ILayoutGroup>,
 ): boolean {
-  console.log(expr, formData, component);
-  return false;
+  const computedArgs = (expr.args || []).map((arg) => resolveArgument(arg, formData));
+  return layoutDynamicsFunctions[expr.function].apply(null, computedArgs);
+}
+
+function resolveArgument(arg:ILayoutDynamicsArg, formData:IFormData):string|undefined {
+  if (typeof arg === 'string') {
+    return arg;
+  }
+
+  if (isDataModelArg(arg)) {
+    return formData[arg.dataModel];
+  }
+
+  // TODO: Resolve component references
+  throw new Error('Not implemented');
+}
+
+function isDataModelArg(arg:ILayoutDynamicsArg):arg is ILayoutDynamicsDataModelArg {
+  return typeof arg === 'object' && 'dataModel' in arg;
 }
