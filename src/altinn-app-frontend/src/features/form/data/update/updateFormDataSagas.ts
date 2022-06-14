@@ -34,9 +34,7 @@ function* updateFormDataSaga({ payload: {
       }
     }
 
-    if (state.formDynamics.conditionalRendering) {
-      yield call(FormDynamicActions.checkIfConditionalRulesShouldRun);
-    }
+    yield call(FormDynamicActions.checkIfConditionalRulesShouldRun);
 
     if (focus && focus !== '' && componentId !== focus) {
       yield put(FormLayoutActions.updateFocus({ currentComponentId: '' }));
