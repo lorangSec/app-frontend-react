@@ -19,7 +19,7 @@ export interface ILayoutGroup extends ILayoutEntry {
   textResourceBindings?: ITextResourceBindings;
   tableHeaders?: string[];
   edit?: IGroupEditProperties;
-  hidden?: boolean|ILayoutDynamicsExpr;
+  hidden2?: boolean|ILayoutDynamicsExpr;
 }
 
 export interface ILayoutComponent extends ILayoutEntry {
@@ -33,7 +33,7 @@ export interface ILayoutComponent extends ILayoutEntry {
   textResourceBindings: ITextResourceBindings;
   formData?: any;
   grid?: IGrid;
-  hidden?: boolean|ILayoutDynamicsExpr;
+  hidden2?: boolean|ILayoutDynamicsExpr;
 }
 
 export type GroupTypes = 'Group' | 'group';

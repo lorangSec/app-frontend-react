@@ -24,7 +24,7 @@ function* checkIfConditionalRulesShouldRunSaga(): SagaIterator {
     const uiConfig: IUiConfig = yield select(UiConfigSelector);
 
     const componentsToHide: string[] = runLayoutDynamics(
-      (component) => component.hidden,
+      (component) => component.hidden2,
       formLayouts,
       formData,
       uiConfig.repeatingGroups,

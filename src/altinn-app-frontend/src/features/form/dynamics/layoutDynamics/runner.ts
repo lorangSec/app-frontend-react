@@ -14,7 +14,8 @@ export function runLayoutDynamics(
 
   for (const layout of Object.values(layouts)) {
     for (const component of iterateFieldsInLayout(layout, [], repeatingGroups)) {
-      console.log(component);
+      const maybeExpr = findExpr(component.component);
+      console.log(component, maybeExpr);
 
       // TODO: Implement
     }
