@@ -197,18 +197,37 @@ export function validateEmptyFields(
   return validations;
 }
 
-interface IteratedComponent {
-  component: ILayoutComponent;
+export interface IteratedComponent<T extends (ILayoutComponent | ILayoutGroup)> {
+  component: T;
   groupDataModelBinding?:string;
   index?:number;
 }
 
-export function* iterateFieldsInLayout(
+export function iterateFieldsAndGroupsInLayout(
   formLayout: ILayout,
   repeatingGroups: IRepeatingGroups,
   hiddenFields?: string[],
   filter?: (component:ILayoutComponent)=>boolean,
-):Generator<IteratedComponent, void> {
+):Generator<IteratedComponent<ILayoutComponent|ILayoutGroup>, void> {
+  return iterateInLayout(formLayout, repeatingGroups, true, hiddenFields, filter);
+}
+
+export function iterateFieldsInLayout(
+  formLayout: ILayout,
+  repeatingGroups: IRepeatingGroups,
+  hiddenFields?: string[],
+  filter?: (component:ILayoutComponent)=>boolean,
+):Generator<IteratedComponent<ILayoutComponent>, void> {
+  return iterateInLayout(formLayout, repeatingGroups, false, hiddenFields, filter);
+}
+
+export function* iterateInLayout<T extends IteratedComponent<any>>(
+  formLayout: ILayout,
+  repeatingGroups: IRepeatingGroups,
+  iterateGroups:boolean,
+  hiddenFields?: string[],
+  filter?: (component:ILayoutComponent)=>boolean,
+):Generator<T, void> {
   const allGroups = formLayout.filter(isGroupComponent);
   const childrenWithoutMultiPagePrefix = (group:ILayoutGroup) => group.edit?.multiPage
     ? group.children.map((componentId) => componentId.replace(/^\d+:/g, ''))
@@ -226,7 +245,7 @@ export function* iterateFieldsInLayout(
   )) as ILayoutComponent[];
 
   for (const component of fieldsToCheck) {
-    yield {component};
+    yield {component} as T;
   }
 
   for (const group of groupsToCheck) {
@@ -237,6 +256,10 @@ export function* iterateFieldsInLayout(
         childrenWithoutMultiPagePrefix(group).indexOf(component.id) > -1 &&
         !hiddenFields?.includes(component.id),
     ) as ILayoutComponent[];
+
+    if (iterateGroups) {
+      yield {component: group} as T;
+    }
 
     for (const component of componentsToCheck) {
       if (group.maxCount > 1) {
@@ -280,7 +303,7 @@ export function* iterateFieldsInLayout(
                   component: componentToCheck,
                   groupDataModelBinding: indexedGroupDataBinding,
                   index: index,
-                };
+                } as T;
               }
             }
           }
@@ -296,12 +319,12 @@ export function* iterateFieldsInLayout(
                 component: componentToCheck,
                 groupDataModelBinding,
                 index
-              };
+              } as T;
             }
           }
         }
       } else {
-        yield {component};
+        yield {component} as T;
       }
     }
   }
