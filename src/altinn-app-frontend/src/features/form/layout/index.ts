@@ -1,5 +1,6 @@
 import { GridSize } from '@material-ui/core';
 import { IMapping, IOption, Triggers } from '../../../types';
+import { ILayoutDynamicsExpr } from "src/features/form/dynamics/layoutDynamics/types";
 
 export interface ILayouts {
   [id: string]: ILayout;
@@ -18,6 +19,7 @@ export interface ILayoutGroup extends ILayoutEntry {
   textResourceBindings?: ITextResourceBindings;
   tableHeaders?: string[];
   edit?: IGroupEditProperties;
+  hidden?: boolean|ILayoutDynamicsExpr;
 }
 
 export interface ILayoutComponent extends ILayoutEntry {
@@ -31,6 +33,7 @@ export interface ILayoutComponent extends ILayoutEntry {
   textResourceBindings: ITextResourceBindings;
   formData?: any;
   grid?: IGrid;
+  hidden?: boolean|ILayoutDynamicsExpr;
 }
 
 export type GroupTypes = 'Group' | 'group';

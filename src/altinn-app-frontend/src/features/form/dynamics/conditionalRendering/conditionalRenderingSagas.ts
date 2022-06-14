@@ -19,12 +19,12 @@ export const FormValidationSelector: (store: IRuntimeState) =>
 function* checkIfConditionalRulesShouldRunSaga(): SagaIterator {
   try {
     const formData: IFormData = yield select(FormDataSelector);
-    const formLayouts: IFormData = yield select(FormLayoutsSelector);
+    const formLayouts:ILayouts = yield select(FormLayoutsSelector);
     const formValidations: IValidations = yield select(FormValidationSelector);
     const uiConfig: IUiConfig = yield select(UiConfigSelector);
 
     const componentsToHide: string[] = runLayoutDynamics(
-      'hidden',
+      (component) => component.hidden,
       formLayouts,
       formData,
       uiConfig.repeatingGroups,
