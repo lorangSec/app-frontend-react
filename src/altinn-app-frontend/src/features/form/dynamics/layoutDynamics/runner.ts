@@ -1,4 +1,4 @@
-import { ILayouts, ILayoutComponent, ILayoutGroup } from "src/features/form/layout";
+import { ILayouts, ILayoutComponent } from "src/features/form/layout";
 import { IFormData } from "src/features/form/data/formDataReducer";
 import { IRepeatingGroups } from "src/types";
 import {
@@ -8,12 +8,17 @@ import {
   ILayoutDynamicsInstanceContextArg,
   ILayoutDynamicsApplicationSettingsArg
 } from "src/features/form/dynamics/layoutDynamics/types";
-import { iterateFieldsAndGroupsInLayout } from "src/utils/validation";
 import { layoutDynamicsFunctions } from "src/features/form/dynamics/layoutDynamics/functions";
 import { IApplicationSettings, IInstanceContext } from "altinn-shared/types";
+import {
+  iterateLayout,
+  IRepeatingGroupHierarchy,
+  ILayoutGroupHierarchy,
+  IRepeatingGroupLayoutComponent
+} from "src/utils/validation";
 
 export function runLayoutDynamics(
-  findExpr: (component: ILayoutComponent | ILayoutGroup) => undefined | boolean | ILayoutDynamicsExpr,
+  findExpr: (component: ILayoutComponent | IRepeatingGroupLayoutComponent | ILayoutGroupHierarchy | IRepeatingGroupHierarchy) => undefined | boolean | ILayoutDynamicsExpr,
   layouts: ILayouts,
   formData: IFormData,
   instanceContext: IInstanceContext,
@@ -23,18 +28,18 @@ export function runLayoutDynamics(
   const out: string[] = [];
 
   for (const layout of Object.values(layouts)) {
-    for (const component of iterateFieldsAndGroupsInLayout(layout.data.layout, repeatingGroups)) {
-      const maybeExpr = findExpr(component.component);
+    for (const component of iterateLayout(layout.data.layout, repeatingGroups)) {
+      const maybeExpr = findExpr(component);
       if (typeof maybeExpr === 'undefined') {
         continue;
       }
 
       if (typeof maybeExpr === 'boolean' && maybeExpr) {
-        out.push(component.component.id);
+        out.push(component.id);
       } else if (typeof maybeExpr === 'object') {
         const result = runLayoutExpression(maybeExpr as ILayoutDynamicsExpr, formData, instanceContext, applicationSettings);
         if (result) {
-          out.push(component.component.id);
+          out.push(component.id);
         }
       }
     }
