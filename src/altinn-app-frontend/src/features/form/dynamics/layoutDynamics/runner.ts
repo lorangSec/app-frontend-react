@@ -6,15 +6,14 @@ import {
   ILayoutDynamicsArg,
   ILayoutDynamicsDataModelArg,
   ILayoutDynamicsInstanceContextArg,
-  ILayoutDynamicsApplicationSettingsArg
+  ILayoutDynamicsApplicationSettingsArg, ILayoutDynamicsComponentArg
 } from "src/features/form/dynamics/layoutDynamics/types";
 import { layoutDynamicsFunctions } from "src/features/form/dynamics/layoutDynamics/functions";
 import { IApplicationSettings, IInstanceContext } from "altinn-shared/types";
 import {
-  iterateLayout,
   IRepeatingGroupHierarchy,
   ILayoutGroupHierarchy,
-  IRepeatingGroupLayoutComponent
+  IRepeatingGroupLayoutComponent, iterateFieldsInLayout, LayoutNode, AnyLayoutNode
 } from "src/utils/validation";
 
 export function runLayoutDynamics(
@@ -28,18 +27,18 @@ export function runLayoutDynamics(
   const out: string[] = [];
 
   for (const layout of Object.values(layouts)) {
-    for (const component of iterateLayout(layout.data.layout, repeatingGroups)) {
-      const maybeExpr = findExpr(component);
+    for (const component of iterateFieldsInLayout(layout.data.layout, repeatingGroups, true)) {
+      const maybeExpr = findExpr(component.item);
       if (typeof maybeExpr === 'undefined') {
         continue;
       }
 
       if (typeof maybeExpr === 'boolean' && maybeExpr) {
-        out.push(component.id);
+        out.push(component.item.id);
       } else if (typeof maybeExpr === 'object') {
-        const result = runLayoutExpression(maybeExpr as ILayoutDynamicsExpr, formData, instanceContext, applicationSettings);
+        const result = runLayoutExpression(maybeExpr as ILayoutDynamicsExpr, formData, instanceContext, applicationSettings, component);
         if (result) {
-          out.push(component.id);
+          out.push(component.item.id);
         }
       }
     }
@@ -73,13 +72,19 @@ function runLayoutExpression(
   formData: IFormData,
   instanceContext: IInstanceContext,
   applicationSettings: IApplicationSettings,
-  // component: IteratedComponent<ILayoutComponent | ILayoutGroup>,
+  component?: LayoutNode<AnyLayoutNode>,
 ): boolean {
-  const computedArgs = (expr.args || []).map((arg) => resolveArgument(arg, formData, instanceContext, applicationSettings));
+  const computedArgs = (expr.args || []).map((arg) => resolveArgument(arg, formData, instanceContext, applicationSettings, component));
   return layoutDynamicsFunctions[expr.function].apply(null, computedArgs);
 }
 
-function resolveArgument(arg: ILayoutDynamicsArg, formData: IFormData, instanceContext: IInstanceContext, applicationSettings): string | undefined {
+function resolveArgument(
+  arg: ILayoutDynamicsArg,
+  formData: IFormData,
+  instanceContext: IInstanceContext,
+  applicationSettings,
+  component?: LayoutNode<AnyLayoutNode>,
+): string | undefined {
   if (typeof arg === 'string') {
     return arg;
   }
@@ -96,7 +101,15 @@ function resolveArgument(arg: ILayoutDynamicsArg, formData: IFormData, instanceC
     return applicationSettings[arg.applicationSettings];
   }
 
-  // TODO: Resolve component references
+  if (isComponentArg(arg) && component) {
+    const foundComponent = component.closest((c) => c.id === arg.component || (c as any).baseComponentId === arg.component);
+    if (foundComponent) {
+      return formData[foundComponent.item.dataModelBindings.simpleBinding];
+    }
+
+    throw new Error('No such component found: ' + arg.component);
+  }
+
   throw new Error('Not implemented');
 }
 
@@ -110,4 +123,8 @@ function isInstanceContextArg(arg: ILayoutDynamicsArg): arg is ILayoutDynamicsIn
 
 function isApplicationSettingsArg(arg: ILayoutDynamicsArg): arg is ILayoutDynamicsApplicationSettingsArg {
   return typeof arg === 'object' && 'applicationSettings' in arg;
+}
+
+function isComponentArg(arg: ILayoutDynamicsArg): arg is ILayoutDynamicsComponentArg {
+  return typeof arg === 'object' && 'component' in arg;
 }

@@ -201,7 +201,7 @@ export interface ILayoutGroupHierarchy extends Omit<ILayoutGroup, 'children'> {
   childComponents: (ILayoutComponent|ILayoutGroupHierarchy)[];
 }
 
-function isGroupHierarchy(component:ILayoutComponent|ILayoutGroupHierarchy):component is ILayoutGroupHierarchy {
+function isGroupHierarchy(component:any):component is ILayoutGroupHierarchy {
   return typeof component === 'object' && 'childComponents' in component;
 }
 
@@ -331,16 +331,76 @@ export function iterateLayout(
   return layoutAsHierarchy(formLayout).map((c) => recurse(c, c.id));
 }
 
-export function iterateFieldsInLayout(formLayout: ILayout, repeatingGroups: IRepeatingGroups):ILayoutComponent[] {
-  const recurse = (list:(ILayoutComponent|ILayoutGroupHierarchy|IRepeatingGroupHierarchy)[]) => {
-    const out:ILayoutComponent[] = [];
+export type AnyLayoutNode = ILayoutComponent|ILayoutGroup|IRepeatingGroupLayoutComponent|ILayoutGroupHierarchy|IRepeatingGroupHierarchy;
+export type AnyLayoutParent = IRepeatingGroupHierarchy|ILayoutGroupHierarchy;
+export class LayoutNode<T extends AnyLayoutNode> {
+  public constructor(
+    public item:T,
+    public parent?:LayoutNode<AnyLayoutParent>,
+    protected rowIndex?:number,
+  ) {
+  }
+
+  public closest(matching:(item:AnyLayoutNode)=>boolean):LayoutNode<AnyLayoutNode>|undefined {
+    if (matching(this.item)) {
+      return this;
+    }
+
+    return this.parent
+      ? this.parent.children(matching, this.rowIndex)
+      : undefined;
+  }
+
+  public children(matching:(item:AnyLayoutNode)=>boolean, onlyInRowIndex?:number):LayoutNode<AnyLayoutNode>|undefined {
+    let list:AnyLayoutNode[];
+    if (isRepeatingGroupHierarchy(this.item)) {
+      if (typeof onlyInRowIndex === 'number') {
+        list = this.item.rows[onlyInRowIndex];
+      } else {
+        list = this.item.rows.flat(); // TODO: This does not make sense. In most cases this will just match the first row
+      }
+    } else if (isGroupHierarchy(this.item)) {
+      list = this.item.childComponents;
+    }
+
+    if (typeof list !== 'undefined') {
+      for (const item of list) {
+        if (matching(item)) {
+          return new LayoutNode(item, this as LayoutNode<AnyLayoutParent>);
+        }
+      }
+    }
+
+    return undefined;
+  }
+}
+
+export function iterateFieldsInLayout(
+  formLayout: ILayout,
+  repeatingGroups: IRepeatingGroups,
+  includeGroups = false,
+):LayoutNode<ILayoutComponent|IRepeatingGroupLayoutComponent|IRepeatingGroupHierarchy|ILayoutGroupHierarchy>[] {
+  const recurse = (
+    list:(ILayoutComponent|ILayoutGroupHierarchy|IRepeatingGroupHierarchy)[],
+    parent?:LayoutNode<AnyLayoutParent>,
+    rowIndex?:number,
+  ) => {
+    const out:LayoutNode<ILayoutComponent|IRepeatingGroupLayoutComponent|IRepeatingGroupHierarchy|ILayoutGroupHierarchy>[] = [];
     for (const component of list) {
       if (isRepeatingGroupHierarchy(component)) {
-        out.push(...component.rows.map((row) => recurse(row)).flat());
+        const asParent:LayoutNode<AnyLayoutParent> = new LayoutNode(component, parent, rowIndex);
+        out.push(...component.rows.map((row, rowIndex) => recurse(row, asParent, rowIndex)).flat());
+        if (includeGroups) {
+          out.push(asParent);
+        }
       } else if (isGroupHierarchy(component)) {
-        out.push(...recurse(component.childComponents))
+        const asParent:LayoutNode<AnyLayoutParent> = new LayoutNode(component, parent, rowIndex);
+        out.push(...recurse(component.childComponents, asParent));
+        if (includeGroups) {
+          out.push(asParent);
+        }
       } else {
-        out.push(component);
+        out.push(new LayoutNode(component, parent, rowIndex));
       }
     }
 
@@ -363,8 +423,11 @@ export function validateEmptyFieldsForLayout(
   const validations: any = {};
   const list = iterateFieldsInLayout(formLayout, repeatingGroups);
   for (const component of list) {
-    if (!component.required ||
-      hiddenFields.includes(component.id) ||
+    if (isGroupComponent(component.item) ||
+      isRepeatingGroupHierarchy(component.item) ||
+      isGroupHierarchy(component.item) ||
+      !component.item.required ||
+      hiddenFields.includes(component.item.id) ||
       (isComponentInRepeatingGroup(component) && hiddenFields.includes(component.baseComponentId))
     ) {
       continue;
@@ -372,11 +435,11 @@ export function validateEmptyFieldsForLayout(
 
     const result = validateEmptyField(
       formData,
-      component.dataModelBindings,
+      component.item.dataModelBindings,
       language,
     );
     if (result !== null) {
-      validations[component.id] = result;
+      validations[component.item.id] = result;
     }
   }
 

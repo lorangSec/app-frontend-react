@@ -324,9 +324,7 @@ export function hasRequiredFields(layout: ILayout) {
  * @see https://www.typescriptlang.org/docs/handbook/2/narrowing.html#using-type-predicates
  */
 
-export function isGroupComponent(
-  component:ILayoutComponent|ILayoutGroup
-):component is ILayoutGroup {
+export function isGroupComponent(component:any):component is ILayoutGroup {
   return component.type.toLowerCase() === 'group';
 }
 
