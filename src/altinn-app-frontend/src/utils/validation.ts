@@ -197,137 +197,157 @@ export function validateEmptyFields(
   return validations;
 }
 
-export interface IteratedComponent<T extends (ILayoutComponent | ILayoutGroup)> {
-  component: T;
-  groupDataModelBinding?:string;
-  index?:number;
+export interface ILayoutGroupHierarchy extends Omit<ILayoutGroup, 'children'> {
+  childComponents: (ILayoutComponent|ILayoutGroupHierarchy)[];
 }
 
-export function iterateFieldsAndGroupsInLayout(
-  formLayout: ILayout,
-  repeatingGroups: IRepeatingGroups,
-  hiddenFields?: string[],
-  filter?: (component:ILayoutComponent)=>boolean,
-):Generator<IteratedComponent<ILayoutComponent|ILayoutGroup>, void> {
-  return iterateInLayout(formLayout, repeatingGroups, true, hiddenFields, filter);
+function isGroupHierarchy(component:ILayoutComponent|ILayoutGroupHierarchy):component is ILayoutGroupHierarchy {
+  return typeof component === 'object' && 'childComponents' in component;
 }
 
-export function iterateFieldsInLayout(
-  formLayout: ILayout,
-  repeatingGroups: IRepeatingGroups,
-  hiddenFields?: string[],
-  filter?: (component:ILayoutComponent)=>boolean,
-):Generator<IteratedComponent<ILayoutComponent>, void> {
-  return iterateInLayout(formLayout, repeatingGroups, false, hiddenFields, filter);
-}
+const childrenWithoutMultiPagePrefix = (group:ILayoutGroup) => group.edit?.multiPage
+  ? group.children.map((componentId) => componentId.replace(/^\d+:/g, ''))
+  : group.children;
 
-export function* iterateInLayout<T extends IteratedComponent<any>>(
-  formLayout: ILayout,
-  repeatingGroups: IRepeatingGroups,
-  iterateGroups:boolean,
-  hiddenFields?: string[],
-  filter?: (component:ILayoutComponent)=>boolean,
-):Generator<T, void> {
-  const allGroups = formLayout.filter(isGroupComponent);
-  const childrenWithoutMultiPagePrefix = (group:ILayoutGroup) => group.edit?.multiPage
-    ? group.children.map((componentId) => componentId.replace(/^\d+:/g, ''))
-    : group.children;
-
-  const fieldsInGroup = allGroups
+// TODO: Move all of this layout logic into layout utils
+// TODO: Move types to types.ts
+// TODO: Write exhaustive tests
+export function layoutAsHierarchy(
+  layout: ILayout,
+): (ILayoutComponent | ILayoutGroupHierarchy)[] {
+  const allGroups = layout.filter(isGroupComponent);
+  const inGroups = allGroups
     .map(childrenWithoutMultiPagePrefix)
     .flat();
-  const groupsToCheck = allGroups.filter(group => !hiddenFields?.includes(group.id));
-  const fieldsToCheck = formLayout.filter((component) => (
+  const topLevelFields = layout.filter((component) => (
     !isGroupComponent(component) &&
-    !hiddenFields?.includes(component.id) &&
-    (filter ? filter(component) : true) &&
-    !fieldsInGroup.includes(component.id)
-  )) as ILayoutComponent[];
+    !inGroups.includes(component.id)
+  )).map((component) => component.id);
+  const topLevelGroups = allGroups.filter((group) => (
+    !inGroups.includes(group.id)
+  )).map((group) => group.id);
 
-  for (const component of fieldsToCheck) {
-    yield {component} as T;
-  }
+  return componentsAndGroupsInGroup(
+    layout,
+    (component) => topLevelFields.includes(component.id) || topLevelGroups.includes(component.id)
+  );
+}
 
-  for (const group of groupsToCheck) {
-    const componentsToCheck = formLayout.filter(
-      (component) =>
-        !isGroupComponent(component) &&
-        (filter ? filter(component) : true) &&
-        childrenWithoutMultiPagePrefix(group).indexOf(component.id) > -1 &&
-        !hiddenFields?.includes(component.id),
-    ) as ILayoutComponent[];
+function componentsAndGroupsInGroup(
+  layout:ILayout,
+  filter:(component:ILayoutComponent|ILayoutGroup)=>boolean
+):(ILayoutComponent|ILayoutGroupHierarchy)[] {
+  const all = layout.filter(filter);
+  const groups = all.filter(isGroupComponent);
+  const components = all.filter((component) => !isGroupComponent(component)) as ILayoutComponent[];
 
-    if (iterateGroups) {
-      yield {component: group} as T;
+  return [
+    ...components,
+    ...groups.map((group) => {
+      const out:ILayoutGroupHierarchy = {
+        ...group,
+        childComponents: componentsAndGroupsInGroup(layout, (component) =>
+          childrenWithoutMultiPagePrefix(group).includes(component.id))
+      };
+      delete out['children'];
+
+      return out;
+    })
+  ];
+}
+
+export interface IRepeatingGroupLayoutComponent extends ILayoutComponent {
+  baseComponentId: string;
+  baseDataModelBinding: IDataModelBindings;
+}
+
+export function isComponentInRepeatingGroup(component:any):component is IRepeatingGroupLayoutComponent {
+  return typeof component === 'object' && 'baseComponentId' in component && 'baseDataModelBinding' in component;
+}
+
+export interface IRepeatingGroupHierarchy extends Omit<ILayoutGroupHierarchy, 'childComponents' | 'children'> {
+  rows: (ILayoutComponent|IRepeatingGroupLayoutComponent|ILayoutGroupHierarchy|IRepeatingGroupHierarchy)[][];
+}
+
+export function isRepeatingGroupHierarchy(component:any):component is IRepeatingGroupHierarchy {
+  return typeof component === 'object' && 'rows' in component;
+}
+
+// TODO: Better naming
+export function iterateLayout(
+  formLayout: ILayout,
+  repeatingGroups: IRepeatingGroups,
+):(ILayoutComponent|ILayoutGroupHierarchy|IRepeatingGroupHierarchy)[] {
+  const recurse = (
+    component: ILayoutComponent|IRepeatingGroupLayoutComponent|ILayoutGroupHierarchy,
+    baseComponentId:string,
+    dataModelBindingBase?:string,
+    dataModelBindingIndexed?:string,
+    componentIdSuffix = '',
+  ):ILayoutComponent|IRepeatingGroupLayoutComponent|ILayoutGroupHierarchy|IRepeatingGroupHierarchy => {
+    if (isGroupHierarchy(component) && component.maxCount > 1) {
+      const rows:IRepeatingGroupHierarchy['rows'] = [];
+      for (let index = 0; index <= repeatingGroups[baseComponentId]?.index; index++) {
+        rows.push(component.childComponents.map((child) => {
+          const newDataModelBinding:IDataModelBindings = {};
+          const bindingIndexedKey = dataModelBindingBase && dataModelBindingIndexed
+            ? `${component.dataModelBindings.group.replace(dataModelBindingBase, dataModelBindingIndexed)}[${index}]`
+            : `${component.dataModelBindings.group}[${index}]`;
+
+          for (const key of Object.keys(child.dataModelBindings)) {
+            newDataModelBinding[key] = child.dataModelBindings[key].replace(
+              dataModelBindingBase || component.dataModelBindings.group,
+              bindingIndexedKey
+            );
+          }
+
+          const suffix = `${componentIdSuffix}-${index}`;
+          const newId = `${child.id}${suffix}`;
+
+          return recurse(
+            {
+              ...child,
+              id: newId,
+              dataModelBindings: newDataModelBinding,
+              baseComponentId: child.id,
+              baseDataModelBinding: child.dataModelBindings,
+            },
+            child.id,
+            child.dataModelBindings.group,
+            bindingIndexedKey,
+            suffix,
+          );
+        }));
+      }
+
+      const out:IRepeatingGroupHierarchy = {...component, rows};
+      delete out['childComponents'];
+      return out;
     }
 
-    for (const component of componentsToCheck) {
-      if (group.maxCount > 1) {
-        const parentGroup = getParentGroup(group.id, formLayout);
-        if (parentGroup) {
-          // If we have a parent group there can exist several instances of the child group.
-          const allGroupIds = Object.keys(repeatingGroups).filter(
-            (key) => key.startsWith(group.id),
-          );
-          for (const childGroupId of allGroupIds) {
-            const splitId = childGroupId.split('-');
-            const parentIndexString = splitId[splitId.length - 1];
-            const parentIndex = Number.parseInt(parentIndexString, 10);
-            const parentDataBinding = parentGroup.dataModelBindings?.group;
-            const indexedParentDataBinding = `${parentDataBinding}[${parentIndex}]`;
-            const indexedGroupDataBinding =
-              group.dataModelBindings?.group.replace(
-                parentDataBinding,
-                indexedParentDataBinding,
-              );
-            const dataModelBindings = {};
-            for (const key of Object.keys(component.dataModelBindings)) {
-              dataModelBindings[key] = component.dataModelBindings[key].replace(
-                parentDataBinding,
-                indexedParentDataBinding,
-              );
-            }
+    return component;
+  };
 
-            for (
-              let index = 0;
-              index <= repeatingGroups[childGroupId]?.index;
-              index++
-            ) {
-              const componentToCheck = {
-                ...component,
-                id: `${component.id}-${parentIndex}-${index}`,
-                dataModelBindings,
-              } as ILayoutComponent;
-              if (!hiddenFields?.includes(componentToCheck.id)) {
-                yield {
-                  component: componentToCheck,
-                  groupDataModelBinding: indexedGroupDataBinding,
-                  index: index,
-                } as T;
-              }
-            }
-          }
-        } else {
-          const groupDataModelBinding = group.dataModelBindings.group;
-          for (let index = 0; index <= repeatingGroups[group.id]?.index; index++) {
-            const componentToCheck = {
-              ...component,
-              id: `${component.id}-${index}`,
-            } as ILayoutComponent;
-            if (!hiddenFields?.includes(componentToCheck.id)) {
-              yield {
-                component: componentToCheck,
-                groupDataModelBinding,
-                index
-              } as T;
-            }
-          }
-        }
+  return layoutAsHierarchy(formLayout).map((c) => recurse(c, c.id));
+}
+
+export function iterateFieldsInLayout(formLayout: ILayout, repeatingGroups: IRepeatingGroups):ILayoutComponent[] {
+  const recurse = (list:(ILayoutComponent|ILayoutGroupHierarchy|IRepeatingGroupHierarchy)[]) => {
+    const out:ILayoutComponent[] = [];
+    for (const component of list) {
+      if (isRepeatingGroupHierarchy(component)) {
+        out.push(...component.rows.map((row) => recurse(row)).flat());
+      } else if (isGroupHierarchy(component)) {
+        out.push(...recurse(component.childComponents))
       } else {
-        yield {component} as T;
+        out.push(component);
       }
     }
-  }
+
+    return out;
+  };
+
+  return recurse(iterateLayout(formLayout, repeatingGroups));
 }
 
 /*
@@ -341,14 +361,19 @@ export function validateEmptyFieldsForLayout(
   repeatingGroups: IRepeatingGroups,
 ): ILayoutValidations {
   const validations: any = {};
-  const generator = iterateFieldsInLayout(formLayout, repeatingGroups, hiddenFields, (component) => component.required);
-  for (const {component, groupDataModelBinding, index} of generator) {
+  const list = iterateFieldsInLayout(formLayout, repeatingGroups);
+  for (const component of list) {
+    if (!component.required ||
+      hiddenFields.includes(component.id) ||
+      (isComponentInRepeatingGroup(component) && hiddenFields.includes(component.baseComponentId))
+    ) {
+      continue;
+    }
+
     const result = validateEmptyField(
       formData,
       component.dataModelBindings,
       language,
-      groupDataModelBinding,
-      index
     );
     if (result !== null) {
       validations[component.id] = result;
@@ -392,8 +417,6 @@ export function validateEmptyField(
   formData: any,
   dataModelBindings: IDataModelBindings,
   language: ILanguage,
-  groupDataBinding?: string,
-  index?: number,
 ): IComponentValidations {
   if (!dataModelBindings) {
     return null;
@@ -401,13 +424,7 @@ export function validateEmptyField(
   const fieldKeys = Object.keys(dataModelBindings) as (keyof IDataModelBindings)[];
   const componentValidations: IComponentValidations = {};
   fieldKeys.forEach((fieldKey) => {
-    let dataModelBindingKey = dataModelBindings[fieldKey];
-    if (groupDataBinding) {
-      dataModelBindingKey = dataModelBindingKey.replace(
-        groupDataBinding,
-        `${groupDataBinding}[${index}]`,
-      );
-    }
+    const dataModelBindingKey = dataModelBindings[fieldKey];
     let value = formData[dataModelBindingKey];
     if (fieldKey === 'list') {
       value = [];
