@@ -3,7 +3,6 @@ import { IInstantiationButtonProps } from 'src/components/base/InstantiationButt
 import { IAttachmentState } from 'src/shared/resources/attachments/attachmentReducer';
 import {
   IRepeatingGroups,
-  ILayoutNavigation,
   ITextResourceBindings,
   IFileUploadersWithTag,
   IOptionsChosen,
@@ -160,21 +159,11 @@ function getIndexForRepeatingGroup(
 }
 
 export function getNextView(
-  navOptions: ILayoutNavigation,
   layoutOrder: string[],
   currentView: string,
   goBack?: boolean,
 ) {
   let result;
-  if (navOptions) {
-    if (goBack && navOptions.previous) {
-      return navOptions.previous;
-    }
-
-    if (!goBack && navOptions.next) {
-      return navOptions.next;
-    }
-  }
 
   if (layoutOrder) {
     const currentViewIndex = layoutOrder.indexOf(currentView);

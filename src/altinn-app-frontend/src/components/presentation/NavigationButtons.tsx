@@ -1,12 +1,13 @@
 import * as React from 'react';
 import { AltinnButton } from 'altinn-shared/components';
 import { Grid, makeStyles } from '@material-ui/core';
-import { INavigationConfig, ILayoutNavigation, Triggers } from 'src/types';
+import { Triggers } from 'src/types';
 import classNames from 'classnames';
 import { getTextFromAppOrDefault } from 'src/utils/textResource';
 import { FormLayoutActions } from 'src/features/form/layout/formLayoutSlice';
 import { useAppDispatch, useAppSelector } from 'src/common/hooks';
 import { IComponentProps } from '..';
+import { UpdateViewActions } from 'src/features/form/layout/formLayoutTypes';
 
 const useStyles = makeStyles({
   backButton: {
@@ -39,12 +40,6 @@ export function NavigationButtons(props: INavigationButtons) {
   const pageTriggers = useAppSelector(
     (state) => state.formLayout.uiConfig.pageTriggers,
   );
-  const { next, previous } = useAppSelector((state) =>
-    getNavigationConfigForCurrentView(
-      state.formLayout.uiConfig.navigationConfig,
-      state.formLayout.uiConfig.currentView,
-    ),
-  );
   const triggers = props.triggers || pageTriggers;
   const nextTextKey = returnToView
     ? 'form_filler.back_to_summary'
@@ -53,20 +48,15 @@ export function NavigationButtons(props: INavigationButtons) {
 
   React.useEffect(() => {
     const currentViewIndex = orderedLayoutKeys?.indexOf(currentView);
-    setDisableBack(!!returnToView || (!previous && currentViewIndex === 0));
+    setDisableBack(!!returnToView || (currentViewIndex === 0));
     setDisableNext(
       !returnToView &&
-        !next &&
-        currentViewIndex === orderedLayoutKeys.length - 1,
+      currentViewIndex === orderedLayoutKeys.length - 1,
     );
-  }, [currentView, orderedLayoutKeys, next, previous, returnToView]);
+  }, [currentView, orderedLayoutKeys, returnToView]);
 
   const onClickPrevious = () => {
-    const goToView =
-      previous || orderedLayoutKeys[orderedLayoutKeys.indexOf(currentView) - 1];
-    if (goToView) {
-      dispatch(FormLayoutActions.updateCurrentView({ newView: goToView }));
-    }
+    dispatch(FormLayoutActions.updateCurrentView({ newView: UpdateViewActions.Previous }));
   };
 
   const OnClickNext = () => {
@@ -85,18 +75,13 @@ export function NavigationButtons(props: INavigationButtons) {
         }),
       );
     } else {
-      const goToView =
-        returnToView ||
-        next ||
-        orderedLayoutKeys[orderedLayoutKeys.indexOf(currentView) + 1];
-      if (goToView) {
-        dispatch(
-          FormLayoutActions.updateCurrentView({
-            newView: goToView,
-            runValidations,
-          }),
-        );
-      }
+      const goToView = returnToView || UpdateViewActions.Next;
+      dispatch(
+        FormLayoutActions.updateCurrentView({
+          newView: goToView,
+          runValidations,
+        }),
+      );
     }
   };
 
@@ -133,14 +118,4 @@ export function NavigationButtons(props: INavigationButtons) {
       </Grid>
     </Grid>
   );
-}
-
-function getNavigationConfigForCurrentView(
-  navigationConfig: INavigationConfig,
-  currentView: string,
-): ILayoutNavigation {
-  if (navigationConfig && navigationConfig[currentView]) {
-    return navigationConfig[currentView];
-  }
-  return {};
 }

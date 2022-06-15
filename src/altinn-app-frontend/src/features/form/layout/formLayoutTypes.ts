@@ -1,4 +1,4 @@
-import { ILayoutSettings, INavigationConfig, ILayoutSets, IOption, IFileUploadersWithTag } from 'src/types';
+import { ILayoutSettings, ILayoutSets, IOption, IFileUploadersWithTag } from 'src/types';
 import { ILayouts } from '.';
 
 export interface IFormLayoutActionRejected {
@@ -7,7 +7,6 @@ export interface IFormLayoutActionRejected {
 
 export interface IFetchLayoutFulfilled {
   layouts: ILayouts;
-  navigationConfig?: INavigationConfig;
 }
 
 export interface IFetchLayoutSetsFulfilled {
@@ -26,8 +25,13 @@ export interface IUpdateAutoSave {
   autoSave: boolean;
 }
 
+export enum UpdateViewActions {
+  Next,
+  Previous
+}
+
 export interface IUpdateCurrentView {
-  newView: string;
+  newView: string | UpdateViewActions;
   returnToView?: string;
   runValidations?: 'allPages' | 'page';
   skipPageCaching?: boolean;
@@ -105,4 +109,8 @@ export interface ICalculatePageOrderAndMoveToNextPage {
 
 export interface ICalculatePageOrderAndMoveToNextPageFulfilled {
     order: string[];
+}
+
+export interface IUpdateLayoutOrder {
+  order: string[];
 }

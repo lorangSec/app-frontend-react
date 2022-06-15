@@ -8,7 +8,7 @@ import { updateValidations } from '../../validation/validationSlice';
 import * as FormDynamicsActionTypes from '../formDynamicsActionTypes';
 import * as RulesActionTypes from '../../rules/rulesActionTypes';
 import { ILayouts } from "src/features/form/layout";
-import { runLayoutDynamics } from "src/features/form/dynamics/layoutDynamics/runner";
+import { runDynamicsForLayouts, runLayoutDynamics } from "src/features/form/dynamics/layoutDynamics/runner";
 import { buildInstanceContext } from 'altinn-shared/utils/instanceContext';
 import type { IApplicationSettings, IInstance } from 'altinn-shared/types';
 
@@ -19,15 +19,17 @@ export const FormValidationSelector: (store: IRuntimeState) =>
   IValidations = (store) => store.formValidations.validations;
 export const ApplicationSettingsSelector: (store: IRuntimeState) => IApplicationSettings = (store) => store.applicationSettings.applicationSettings;
 export const InstanceSelector: (store: IRuntimeState) => IInstance = (store) => store.instanceData?.instance;
+export const LayoutOrderSelector: (store: IRuntimeState) => string[] = (store) => store.formLayout.uiConfig.layoutOrder;
 
 function* checkIfConditionalRulesShouldRunSaga(): SagaIterator {
   try {
     const formData: IFormData = yield select(FormDataSelector);
-    const formLayouts:ILayouts = yield select(FormLayoutsSelector);
+    const formLayouts: ILayouts = yield select(FormLayoutsSelector);
     const formValidations: IValidations = yield select(FormValidationSelector);
     const uiConfig: IUiConfig = yield select(UiConfigSelector);
     const applicationSettings: IApplicationSettings = yield select(ApplicationSettingsSelector)
     const instance: IInstance = yield select(InstanceSelector);
+    const layoutOrder: string[] = yield select(LayoutOrderSelector)
 
     const instanceContext = buildInstanceContext(instance);
 
@@ -40,6 +42,7 @@ function* checkIfConditionalRulesShouldRunSaga(): SagaIterator {
       uiConfig.repeatingGroups,
     );
 
+
     if (shouldHiddenFieldsUpdate(uiConfig.hiddenFields, componentsToHide)) {
       yield put(FormLayoutActions.updateHiddenComponents({ componentsToHide }));
       componentsToHide.forEach((componentId) => {
@@ -49,6 +52,21 @@ function* checkIfConditionalRulesShouldRunSaga(): SagaIterator {
           updateValidations({ validations: newFormValidations });
         }
       });
+    }
+
+    const hiddenLayouts: string[] = runDynamicsForLayouts(
+      formLayouts,
+      formData,
+      instanceContext,
+      applicationSettings
+    );
+
+
+    const layouts = Object.keys(formLayouts);
+    const newLayoutOrder = layouts.filter((layout) => !hiddenLayouts.includes(layout));
+
+    if (shouldHiddenFieldsUpdate(layoutOrder, newLayoutOrder)) {
+      yield put(FormLayoutActions.updateLayoutOrder({ order: newLayoutOrder }));
     }
   } catch (err) {
     yield call(console.error, err);

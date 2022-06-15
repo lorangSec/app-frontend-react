@@ -5,9 +5,9 @@ import { all, call, put, select, take, takeEvery, takeLatest } from 'redux-saga/
 import { IFileUploadersWithTag, IFormFileUploaderWithTagComponent, IRepeatingGroups, IRuntimeState, IValidationIssue, IValidations, Triggers } from 'src/types';
 import { getFileUploadersWithTag, getRepeatingGroups, removeRepeatingGroupFromUIConfig } from 'src/utils/formLayout';
 import { AxiosRequestConfig } from 'axios';
-import { get } from 'altinn-shared/utils';
-import { getCurrentTaskDataElementId, getDataTaskDataTypeId } from 'src/utils/appMetadata';
-import { getDataValidationUrl } from 'src/utils/appUrlHelper';
+import { get, post } from 'altinn-shared/utils';
+import { getCurrentDataTypeForApplication, getCurrentTaskDataElementId, getDataTaskDataTypeId, isStatelessApp } from 'src/utils/appMetadata';
+import { getCalculatePageOrderUrl, getDataValidationUrl } from 'src/utils/appUrlHelper';
 import { validateFormData, validateFormComponents, validateEmptyFields, mapDataElementValidationToRedux, canFormBeSaved, mergeValidationObjects, removeGroupValidationsByIndex, validateGroup, getValidator } from 'src/utils/validation';
 import { startInitialDataTaskQueueFulfilled } from 'src/shared/resources/queue/queueSlice';
 import { updateValidations } from 'src/features/form/validation/validationSlice';
@@ -15,13 +15,12 @@ import { IAttachmentState } from 'src/shared/resources/attachments/attachmentRed
 import { ILayoutComponent, ILayoutEntry, ILayoutGroup, ILayouts } from '..';
 import ConditionalRenderingActions from '../../dynamics/formDynamicsActions';
 import { FormLayoutActions, ILayoutState } from '../formLayoutSlice';
-import { IUpdateFocus, IUpdateRepeatingGroups, IUpdateCurrentView, ICalculatePageOrderAndMoveToNextPage, IUpdateRepeatingGroupsEditIndex, IUpdateFileUploaderWithTagEditIndex, IUpdateFileUploaderWithTagChosenOptions } from '../formLayoutTypes';
+import { IUpdateFocus, IUpdateRepeatingGroups, IUpdateCurrentView, ICalculatePageOrderAndMoveToNextPage, IUpdateRepeatingGroupsEditIndex, IUpdateFileUploaderWithTagEditIndex, IUpdateFileUploaderWithTagChosenOptions, UpdateViewActions } from '../formLayoutTypes';
 import { IFormDataState } from '../../data/formDataReducer';
 import FormDataActions from '../../data/formDataActions';
 import { convertDataBindingToModel, removeGroupData } from '../../../../utils/databindings';
 import { getOptionLookupKey } from 'src/utils/options';
-import { runDynamicsForLayouts } from '../../dynamics/layoutDynamics/runner';
-import { buildInstanceContext } from 'altinn-shared/utils/instanceContext';
+import { getLayoutsetForDataElement } from 'src/utils/layout';
 
 const selectFormLayoutState = (state: IRuntimeState): ILayoutState => state.formLayout;
 const selectFormData = (state: IRuntimeState): IFormDataState => state.formData;
@@ -127,22 +126,35 @@ export function* updateCurrentViewSaga({ payload: {
 } }: PayloadAction<IUpdateCurrentView>): SagaIterator {
   try {
     const state: IRuntimeState = yield select();
+    const layoutOrder: string[] = state.formLayout.uiConfig.layoutOrder;
     let currentViewCacheKey: string = state.formLayout.uiConfig.currentViewCacheKey;
     if (!currentViewCacheKey) {
       currentViewCacheKey = state.instanceData.instance.id;
       yield put(FormLayoutActions.setCurrentViewCacheKey({ key: currentViewCacheKey }));
     }
+
+    let newViewId: string;
+    if (typeof newView == 'string') {
+      newViewId = newView;
+    } else {
+      const currentView = state.formLayout.uiConfig.currentView;
+      if (newView === UpdateViewActions.Next) {
+        newViewId = layoutOrder[layoutOrder.indexOf(currentView) + 1];
+      } else if (newView === UpdateViewActions.Previous) {
+        newViewId = layoutOrder[layoutOrder.indexOf(currentView) - 1];
+      }
+    }
+
     if (!runValidations) {
       if (!skipPageCaching) {
-        localStorage.setItem(currentViewCacheKey, newView);
+        localStorage.setItem(currentViewCacheKey, newViewId);
       }
-      yield put(FormLayoutActions.updateCurrentViewFulfilled({ newView, returnToView }));
+      yield put(FormLayoutActions.updateCurrentViewFulfilled({ newView: newViewId, returnToView }));
     } else {
       const currentDataTaskDataTypeId = getDataTaskDataTypeId(
         state.instanceData.instance.process.currentTask.elementId,
         state.applicationMetadata.applicationMetadata.dataTypes,
       );
-      const layoutOrder: string[] = state.formLayout.uiConfig.layoutOrder;
       const validator = getValidator(currentDataTaskDataTypeId, state.formDataModel.schemas);
       const model = convertDataBindingToModel(state.formData.formData);
       const validationResult = validateFormData(
@@ -188,16 +200,16 @@ export function* updateCurrentViewSaga({ payload: {
       yield put(updateValidations({ validations }));
       if (state.formLayout.uiConfig.returnToView) {
         if (!skipPageCaching) {
-          localStorage.setItem(currentViewCacheKey, newView);
+          localStorage.setItem(currentViewCacheKey, newViewId);
         }
-        yield put(FormLayoutActions.updateCurrentViewFulfilled({ newView }));
+        yield put(FormLayoutActions.updateCurrentViewFulfilled({ newView: newViewId }));
       } else if (!canFormBeSaved({ validations: { [currentView]: validations[currentView] }, invalidDataTypes: false }, 'Complete')) {
         yield put(FormLayoutActions.updateCurrentViewRejected({ error: null }));
       } else {
         if (!skipPageCaching) {
-          localStorage.setItem(currentViewCacheKey, newView);
+          localStorage.setItem(currentViewCacheKey, newViewId);
         }
-        yield put(FormLayoutActions.updateCurrentViewFulfilled({ newView, returnToView }));
+        yield put(FormLayoutActions.updateCurrentViewFulfilled({ newView: newViewId, returnToView }));
       }
     }
   } catch (error) {
@@ -208,12 +220,43 @@ export function* updateCurrentViewSaga({ payload: {
 export function* calculatePageOrderAndMoveToNextPageSaga({ payload: { runValidations, skipMoveToNext } }: PayloadAction<ICalculatePageOrderAndMoveToNextPage>): SagaIterator {
   try {
     const state: IRuntimeState = yield select();
+    const layoutSets = state.formLayout.layoutsets;
     const currentView = state.formLayout.uiConfig.currentView;
-    const layouts = Object.keys(state.formLayout.layouts);
-    const instanceContext = buildInstanceContext(state.instanceData?.instance);
-    const applicationSettings = state.applicationSettings.applicationSettings;
-    const hiddenLayouts = runDynamicsForLayouts(state.formLayout.layouts, state.formData.formData, instanceContext, applicationSettings);
-    const layoutOrder = layouts.filter((layout) => !hiddenLayouts.includes(layout));
+    let layoutSetId: string = null;
+    let dataTypeId: string = null;
+    const formData = convertDataBindingToModel(state.formData.formData);
+    const appIsStateless = isStatelessApp(state.applicationMetadata.applicationMetadata)
+    if (appIsStateless) {
+      dataTypeId = getCurrentDataTypeForApplication({
+        application: state.applicationMetadata.applicationMetadata,
+        layoutSets: state.formLayout.layoutsets,
+      });
+      layoutSetId = state.applicationMetadata.applicationMetadata.onEntry.show;
+    } else {
+      const instance = state.instanceData.instance;
+      dataTypeId = getDataTaskDataTypeId(
+        instance.process.currentTask.elementId,
+        state.applicationMetadata.applicationMetadata.dataTypes
+      );
+      if (layoutSets != null) {
+        layoutSetId = getLayoutsetForDataElement(instance, dataTypeId, layoutSets);
+      }
+    }
+    const layoutOrder = yield call(
+      post,
+      getCalculatePageOrderUrl(appIsStateless),
+      formData,
+      {
+        params: {
+          currentPage: currentView,
+          layoutSetId,
+          dataTypeId,
+        },
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    );
     yield put(FormLayoutActions.calculatePageOrderAndMoveToNextPageFulfilled({ order: layoutOrder }));
     if (skipMoveToNext) {
       return;
@@ -222,7 +265,11 @@ export function* calculatePageOrderAndMoveToNextPageSaga({ payload: { runValidat
     const newView = returnToView || layoutOrder[layoutOrder.indexOf(currentView) + 1];
     yield put(FormLayoutActions.updateCurrentView({ newView, runValidations }));
   } catch (error) {
-    yield put(FormLayoutActions.calculatePageOrderAndMoveToNextPageRejected({ error }));
+    if (error?.response?.status === 404) {
+      // We accept that the app does noe have defined a calculate page order as this is not default for older apps
+    } else {
+      yield put(FormLayoutActions.calculatePageOrderAndMoveToNextPageRejected({ error }));
+    }
   }
 }
 
@@ -230,7 +277,7 @@ export function* watchCalculatePageOrderAndMoveToNextPageSaga(): SagaIterator {
   yield takeEvery(FormLayoutActions.calculatePageOrderAndMoveToNextPage, calculatePageOrderAndMoveToNextPageSaga);
 }
 
-export function* watchInitialCalculagePageOrderAndMoveToNextPageSaga(): SagaIterator {
+export function* watchInitialCalculatePageOrderAndMoveToNextPageSaga(): SagaIterator {
   while (true) {
     yield all([
       take(startInitialDataTaskQueueFulfilled),

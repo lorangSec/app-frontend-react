@@ -23,7 +23,6 @@ export function* fetchLayoutSaga(): SagaIterator {
     const layoutSetId = getLayoutSetIdForApplication(applicationMetadata, instance, layoutSets);
     const layoutResponse: any = yield call(get, getLayoutsUrl(layoutSetId));
     const layouts: ILayouts = {};
-    const navigationConfig: any = {};
     let autoSave: boolean;
     let firstLayoutKey: string;
     if (layoutResponse.data?.layout) {
@@ -46,12 +45,11 @@ export function* fetchLayoutSaga(): SagaIterator {
 
       orderedLayoutKeys.forEach((key) => {
         layouts[key] = layoutResponse[key];
-        navigationConfig[key] = layoutResponse[key].data.navigation;
         autoSave = layoutResponse[key].data.autoSave;
       });
     }
 
-    yield put(Actions.fetchLayoutFulfilled({ layouts, navigationConfig }));
+    yield put(Actions.fetchLayoutFulfilled({ layouts }));
     yield put(Actions.updateAutoSave({ autoSave }));
     yield put(Actions.updateCurrentView({ newView: firstLayoutKey, skipPageCaching: true }));
   } catch (error) {

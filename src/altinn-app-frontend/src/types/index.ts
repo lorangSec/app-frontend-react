@@ -117,15 +117,6 @@ export interface IPagesSettings {
   hideCloseButton?: boolean;
 }
 
-export interface ILayoutNavigation {
-  next?: string;
-  previous?: string;
-}
-
-export interface INavigationConfig {
-  [id: string]: ILayoutNavigation;
-}
-
 export interface IOption {
   label: string;
   value: any;
@@ -242,7 +233,6 @@ export interface IUiConfig {
   hiddenFields: string[];
   repeatingGroups?: IRepeatingGroups;
   fileUploadersWithTag?: IFileUploadersWithTag
-  navigationConfig?: INavigationConfig;
   layoutOrder: string[];
   pageTriggers?: Triggers[];
   hideCloseButton?: boolean;

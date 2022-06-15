@@ -77,14 +77,6 @@ describe('components/presentation/NavigationButton.tsx', () => {
         hiddenFields: [],
         repeatingGroups: null,
         layoutOrder: ['layout1', 'layout2'],
-        navigationConfig: {
-          layout1: {
-            next: 'layout2',
-          },
-          layout2: {
-            previous: 'layout1',
-          },
-        },
       },
     });
   });

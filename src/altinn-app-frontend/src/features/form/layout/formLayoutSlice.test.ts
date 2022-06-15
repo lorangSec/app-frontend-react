@@ -7,20 +7,17 @@ import reducer, {
 describe('features > form > layout > layoutSlice.ts', () => {
   describe('fetchLayoutFulfilled', () => {
     const layouts = {};
-    const navigationConfig = {};
 
     it('should set layout state accordingly', () => {
       const nextState = reducer(
         initialState,
         FormLayoutActions.fetchLayoutFulfilled({
           layouts,
-          navigationConfig,
         }),
       );
 
       expect(nextState.layouts).toEqual(layouts);
       expect(nextState.uiConfig.layoutOrder).toEqual(Object.keys(layouts));
-      expect(nextState.uiConfig.navigationConfig).toEqual(navigationConfig);
     });
 
     it('should reset repeatingGroups if set', () => {
@@ -39,7 +36,6 @@ describe('features > form > layout > layoutSlice.ts', () => {
         stateWithRepGroups,
         FormLayoutActions.fetchLayoutFulfilled({
           layouts,
-          navigationConfig,
         }),
       );
 
@@ -55,7 +51,6 @@ describe('features > form > layout > layoutSlice.ts', () => {
         stateWithError,
         FormLayoutActions.fetchLayoutFulfilled({
           layouts,
-          navigationConfig,
         }),
       );
 
@@ -83,7 +78,7 @@ describe('features > form > layout > layoutSlice.ts', () => {
     it('should set currentView to cached key in localStorage if key exists in settings.pages.order', () => {
       jest.spyOn(window.localStorage.__proto__, 'getItem');
       window.localStorage.__proto__.getItem = jest.fn().mockReturnValue('page2');
-      
+
       const settings = {
         pages: {
           order: ['page1', 'page2'],
@@ -99,14 +94,14 @@ describe('features > form > layout > layoutSlice.ts', () => {
           settings,
         }),
       );
-  
+
       expect(nextState.uiConfig.currentView).toEqual('page2');
     });
-  
+
     it('should set currentView to first page in settings.pages.order if key is cached in localStorage but does not exist in order', () => {
       jest.spyOn(window.localStorage.__proto__, 'getItem');
       window.localStorage.__proto__.getItem = jest.fn().mockReturnValue('page3');
-      
+
       const settings = {
         pages: {
           order: ['page1', 'page2'],
@@ -122,7 +117,7 @@ describe('features > form > layout > layoutSlice.ts', () => {
           settings,
         }),
       );
-  
+
       expect(nextState.uiConfig.currentView).toEqual('page1');
     })
   });

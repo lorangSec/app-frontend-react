@@ -43,9 +43,6 @@ const PresentationComponent = (props: IPresentationProvidedProps) => {
   const textResources = useAppSelector(state => state.textResources.resources);
   const previousFormPage: string = useAppSelector(state =>
     getNextView(
-      state.formLayout.uiConfig.navigationConfig[
-        state.formLayout.uiConfig.currentView
-      ],
       state.formLayout.uiConfig.layoutOrder,
       state.formLayout.uiConfig.currentView,
       true,

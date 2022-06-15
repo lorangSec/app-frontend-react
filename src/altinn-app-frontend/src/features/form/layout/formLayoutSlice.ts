@@ -20,7 +20,6 @@ export const initialState: ILayoutState = {
     repeatingGroups: {},
     fileUploadersWithTag: {},
     currentView: 'FormLayout',
-    navigationConfig: {},
     layoutOrder: null,
     pageTriggers: [],
   },
@@ -34,9 +33,8 @@ const formLayoutSlice = createSlice({
   initialState,
   reducers: {
     fetchLayoutFulfilled: (state, action: PayloadAction<LayoutTypes.IFetchLayoutFulfilled>) => {
-      const { layouts, navigationConfig } = action.payload;
+      const { layouts } = action.payload;
       state.layouts = layouts;
-      state.uiConfig.navigationConfig = navigationConfig;
       state.uiConfig.layoutOrder = Object.keys(layouts);
       state.error = null;
       state.uiConfig.repeatingGroups = {};
@@ -158,6 +156,10 @@ const formLayoutSlice = createSlice({
       const { error } = action.payload;
       state.error = error;
     },
+    updateLayoutOrder: (state, action: PayloadAction<LayoutTypes.IUpdateLayoutOrder>) => {
+      const { order } = action.payload;
+      state.uiConfig.layoutOrder = order;
+    }
   },
 });
 

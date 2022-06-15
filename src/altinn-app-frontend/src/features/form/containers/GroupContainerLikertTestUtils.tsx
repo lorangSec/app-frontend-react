@@ -125,7 +125,6 @@ const createLayout = (
       focus: null,
       autoSave: null,
       fileUploadersWithTag: {},
-      navigationConfig: {},
       layoutOrder: null,
       pageTriggers: [],
     },
